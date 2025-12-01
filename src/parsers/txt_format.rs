@@ -156,7 +156,7 @@ impl YPBankTxtParser {
                         .to_string(),
                 })
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<Vec<_>, ParserError>>()?;
 
         Ok(records)
     }

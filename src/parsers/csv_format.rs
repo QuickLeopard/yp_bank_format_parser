@@ -1,5 +1,5 @@
-use std::io::BufRead;
-use std::io::{Read, Write};
+
+use std::io::{Read, BufRead, Write};
 use std::str::FromStr;
 
 use crate::parsers::error::ParserError;

@@ -1,12 +1,14 @@
 use std::str::FromStr;
 
+use crate::parsers::error::ParserError;
+
 #[derive(Debug)]
 pub struct YPBankCsvRecord {
     pub tx_id: u64,
     pub tx_type: TransactionType,
     pub from_user_id: u64,
     pub to_user_id: u64,
-    pub amount: u64,
+    pub amount: i64,
     pub timestamp: String,
     pub status: Status,
     pub description: String,
@@ -14,9 +16,9 @@ pub struct YPBankCsvRecord {
 
 #[derive(Debug)]
 pub enum TransactionType {
-    DEPOSIT,
-    WITHDRAWAL,
-    TRANSFER,
+    DEPOSIT = 0,
+    TRANSFER = 1,
+    WITHDRAWAL = 2,
 }
 
 impl FromStr for TransactionType {
@@ -32,11 +34,24 @@ impl FromStr for TransactionType {
     }
 }
 
+impl TryFrom<u8> for TransactionType {
+    type Error = ParserError;
+    
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(TransactionType::DEPOSIT),
+            1 => Ok(TransactionType::TRANSFER),
+            2 => Ok(TransactionType::WITHDRAWAL),
+            _ => Err(ParserError::ParseError(format! ("Wrong Transaction Type: {}", value))),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum Status {
-    PENDING,
-    SUCCESS,
-    FAILURE,
+    SUCCESS = 0,
+    FAILURE = 1,
+    PENDING = 2,
 }
 
 impl FromStr for Status {
@@ -48,6 +63,19 @@ impl FromStr for Status {
             "SUCCESS" => Ok(Status::SUCCESS),
             "FAILURE" => Ok(Status::FAILURE),
             _ => Err("Wrong status".to_string()),
+        }
+    }
+}
+
+impl TryFrom<u8> for Status {
+    type Error = ParserError;
+    
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Status::SUCCESS ),
+            1 => Ok(Status::FAILURE),
+            2 => Ok(Status::PENDING),
+            _ => Err(ParserError::ParseError(format! ("Wrong Status: {}", value))),
         }
     }
 }
