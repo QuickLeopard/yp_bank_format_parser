@@ -2,7 +2,7 @@
 use std::io;
 use std::io::BufReader;
 use std::io::Read;
-use std::io::BufRead;
+use std::io::{BufRead, BufWriter, Write};
 
 use std::fs::{self, File};
 
@@ -15,6 +15,7 @@ fn usage () {
     println!("Использование:");
     println!("  --input <input_file>");
     println!("  --input-format <format>");
+    println!("  --output <output_file>");
     println!("  --output-format <format>");
 }
 
@@ -38,11 +39,53 @@ fn main () {
     };
 
     let mut input_format = "csv";
-    if args.len() >= 5 && args[3] == "--input-format" {
-        input_format = &args[4];
+    if args.len () >= 2 {
+        let splitted: Vec<&str> = args[2].split(".").collect();
+        if args.len() >= 5 && args[3] == "--input-format" {
+            input_format = &args[4];
+        }
+        else if splitted.len() > 1 {
+            if let Some(ext) = splitted.last() {
+                match *ext {
+                    "csv" => input_format = "csv",
+                    "txt" => input_format = "txt",
+                    "bin" => input_format = "bin",
+                    _ => {}
+                }
+            }
+        }
     }
 
-    let data = 
+    let mut writer: Box<dyn Write> = if args.len() >= 7 && args[5] == "--output" {
+        println!("Writing to file: {}", &args[6]);
+        let fs = File::create(&args[6]).expect ("Failed to open output file");
+        Box::new(BufWriter::new(fs))
+    } else {
+        Box::new(io::stdout().lock())
+    };
+
+    let mut output_format = "csv";
+    if args.len () >= 6 {
+        let splitted: Vec<&str> = args[6].split(".").collect();
+        if args.len() >= 8 && args[7] == "--output-format" {
+            input_format = &args[8];
+        }
+        else if splitted.len() > 1 {
+                if let Some(ext) = splitted.last() {
+                    match *ext {
+                        "csv" => output_format = "csv",
+                        "txt" => output_format = "txt",
+                        "bin" => output_format = "bin",
+                        _ => {}
+                    }
+                }
+            }
+    }
+
+    println! ("Input format: {}", input_format);
+    println! ("Output format: {}", output_format);
+
+    let records = 
     
         match Parser::from_read (reader, input_format) {
             Ok(records) => records,
@@ -52,9 +95,11 @@ fn main () {
             }
         };
 
-    for record in data {
-        println!("Record: {:?}", record);
-    }
+    Parser::write_to(writer, &records, output_format);
+    
+    /*for record in data {
+        writer.write("Record: {:?}", record);
+    }*/
 }
 
 #[cfg(test)]
