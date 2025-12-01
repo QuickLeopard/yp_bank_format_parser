@@ -81,6 +81,7 @@ impl YPBankBinParser {
             
             records.push(record.clone ());
 
+            println!("");
             println! ("Parsed: {} records, record: {:?}", records.len(), record);
         }       
 
@@ -94,7 +95,7 @@ impl YPBankBinParser {
             return Err(ParserError::ParseError("No records to write".to_string()));
         }
 
-        for record in records.iter () {
+        for record in records.iter () { //}.take (1) {
             // Write magic header for each record
             writer.write_all(&MAGIC_HEADER.to_be_bytes())?;
             
