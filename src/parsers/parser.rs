@@ -32,7 +32,7 @@ impl Parser {
         match format.to_lowercase().as_str() {
             "csv" => YPBankCsvParser::write_to(writer, records),
             "txt" => YPBankTxtParser::write_to(writer, records),
-            //"bin" => YPBankBinParser::write_to(writer, records),
+            "bin" => YPBankBinParser::write_to(writer, records),
             _ => Err(ParserError::ParseError(format!(
                 "Unsupported format: {}",
                 format

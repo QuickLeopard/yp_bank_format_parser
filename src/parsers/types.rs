@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct YPBankCsvRecord {
     pub tx_id: u64,
     pub tx_type: TransactionType,
@@ -14,7 +14,7 @@ pub struct YPBankCsvRecord {
     pub description: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum TransactionType {
     DEPOSIT = 0,
     TRANSFER = 1,
@@ -47,7 +47,7 @@ impl TryFrom<u8> for TransactionType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Status {
     SUCCESS = 0,
     FAILURE = 1,

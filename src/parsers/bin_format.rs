@@ -1,9 +1,11 @@
 
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{self, Read, BufRead, Write, Seek, SeekFrom};
 
 use crate::parsers::error::ParserError;
 use crate::parsers::types::{Status, TransactionType, YPBankCsvRecord};
+
+const MAGIC_HEADER: u32 = 0x5950424E; // 'YPBN' in ASCII
 
 pub struct YPBankBinParser;
 
@@ -26,7 +28,10 @@ impl YPBankBinParser {
                         break;
                     }
                 }
-                Ok(_) => return Err(ParserError::ParseError("Incomplete magic header".to_string())),
+                Ok(x) => {
+                        return Err(ParserError::ParseError(format! ("Incomplete magic header: {} bytes, value: {}", x, &buffer[0])));
+                        //eprintln! ("Incomplete magic header");
+                    },
                 Err(e) => return Err(ParserError::ParseError (e.to_string())),
             }
             
@@ -35,6 +40,9 @@ impl YPBankBinParser {
             
             // Parse record body
             let tx_id = reader.read_u64::<BigEndian>()?;
+
+            println! ("tx_id: {}", tx_id);
+
             let tx_type_byte = reader.read_u8()?;
             let tx_type = TransactionType::try_from(tx_type_byte)?;
             
@@ -59,8 +67,8 @@ impl YPBankBinParser {
             
             // Validate UTF-8
             let description = String::from_utf8(desc_bytes)?;
-            
-            records.push(YPBankCsvRecord {
+
+            let record = YPBankCsvRecord {
                 tx_id,
                 tx_type,
                 from_user_id,
@@ -69,10 +77,52 @@ impl YPBankBinParser {
                 timestamp: format! ("{}", timestamp),
                 status,
                 description,
-            });
-        }
+            };
+            
+            records.push(record.clone ());
+
+            println! ("Parsed: {} records, record: {:?}", records.len(), record);
+        }       
 
         Ok (records)
     }
+    pub fn write_to<W: Write>(
+        mut writer: W,
+        records: &[YPBankCsvRecord],
+    ) -> Result<(), ParserError> {
+        if records.is_empty() {
+            return Err(ParserError::ParseError("No records to write".to_string()));
+        }
+
+        for record in records.iter () {
+            // Write magic header for each record
+            writer.write_all(&MAGIC_HEADER.to_be_bytes())?;
+            
+            // Calculate and write record size
+            let desc_bytes = record.description.as_bytes();
+            let record_size = 8 + 1 + 8 + 8 + 8 + 8 + 1 + 4 + desc_bytes.len() as u32;
+            writer.write_u32::<BigEndian>(record_size)?;
+
+            // Write record fields
+            writer.write_u64::<BigEndian>(record.tx_id)?;
+            writer.write_u8(record.tx_type as u8)?;
+            writer.write_u64::<BigEndian>(record.from_user_id)?;
+            writer.write_u64::<BigEndian>(record.to_user_id)?;
+            writer.write_i64::<BigEndian>(record.amount)?;
+            writer.write_u64::<BigEndian>(record.timestamp.parse::<u64>().unwrap_or(0))?;
+            writer.write_u8(record.status as u8)?;
+
+            // Write description
+            writer.write_u32::<BigEndian>(desc_bytes.len() as u32)?;
+            writer.write_all(desc_bytes)?;
+
+        
+
+        }
+     
+        Ok(())
+    
+    }
+     
 
 }
