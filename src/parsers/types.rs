@@ -1,4 +1,3 @@
-
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -48,7 +47,7 @@ impl FromStr for Status {
             "PENDING" => Ok(Status::PENDING),
             "SUCCESS" => Ok(Status::SUCCESS),
             "FAILURE" => Ok(Status::FAILURE),
-            _ => Err("Wrong status".to_string ()),
+            _ => Err("Wrong status".to_string()),
         }
     }
 }

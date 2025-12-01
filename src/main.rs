@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 use std::fmt::write;
 use std::io;
@@ -10,11 +9,11 @@ use std::fs::{self, File};
 
 use std::env;
 
-use yp_bank_format_parser::parsers::types::{YPBankCsvRecord, TransactionType, Status};
-use yp_bank_format_parser::parsers::parser::Parser;
 use yp_bank_format_parser::parsers::error::ParserError;
+use yp_bank_format_parser::parsers::parser::Parser;
+use yp_bank_format_parser::parsers::types::{Status, TransactionType, YPBankCsvRecord};
 
-fn usage () {
+fn usage() {
     println!("Использование:");
     println!("  --input <input_file>");
     println!("  --input-format <format>");
@@ -22,110 +21,110 @@ fn usage () {
     println!("  --output-format <format>");
 }
 
-fn parse_cli_args (args: &[String]) -> HashMap<String, String> {
-    
+fn parse_cli_args(args: &[String]) -> HashMap<String, String> {
     let mut dict = HashMap::new();
 
     for chunk in args.chunks_exact(2) {
+        dict.insert(
+            chunk[0].trim().clone().to_string(),
+            chunk[1].trim().clone().to_string(),
+        );
 
-        dict.insert(chunk[0].trim ().clone ().to_string (), chunk[1].trim (). clone ().to_string ());
-
-        if chunk[0] != "--input" && chunk[0] != "--input-format" && chunk[0] != "--output" && chunk[0] != "--output-format" {
-            panic! ("Unknown CLI arguments: {} {}", chunk[0], chunk[1]);
+        if chunk[0] != "--input"
+            && chunk[0] != "--input-format"
+            && chunk[0] != "--output"
+            && chunk[0] != "--output-format"
+        {
+            panic!("Unknown CLI arguments: {} {}", chunk[0], chunk[1]);
         }
     }
 
     dict
 }
 
-fn extract_format (file_path: &str) -> String {
+fn extract_format(file_path: &str) -> String {
     let split_path: Vec<&str> = file_path.split(".").collect();
     if split_path.len() > 1 {
         if let Some(ext) = split_path.last() {
-                    match *ext {
-                        "csv" => { return "csv".to_string () },
-                        "txt" => { return "txt".to_string () },
-                        "bin" => { return "bin".to_string () },
-                        _ => { return "csv".to_string () }
-                    }
+            match *ext {
+                "csv" => return "csv".to_string(),
+                "txt" => return "txt".to_string(),
+                "bin" => return "bin".to_string(),
+                _ => return "csv".to_string(),
+            }
         }
     }
-    "csv".to_string ()
+    "csv".to_string()
 }
 
-fn main () {
-    
-    let args: Vec<String> = env::args().skip (1).collect();
+fn main() {
+    let args: Vec<String> = env::args().skip(1).collect();
 
     println!("Args: {:?}", args);
 
     if args.len() == 1 && args[0] == "--help" {
-        usage ();
+        usage();
         return;
-    }   
+    }
 
     let args_map = parse_cli_args(&args);
 
-    let mut input_format = "csv".to_string ();
-    let reader: Box<dyn BufRead> = 
-    
-        if args_map.contains_key("--input") {
+    let mut input_format = "csv".to_string();
+    let reader: Box<dyn BufRead> = if args_map.contains_key("--input") {
+        let file_path = args_map.get("--input").expect("Empty --input argument!");
 
-            let file_path = args_map.get ("--input").expect ("Empty --input argument!");
+        input_format = extract_format(file_path);
 
-            input_format = extract_format(file_path);
-
-            println!("Reading from file: {}", file_path);
-            let fs = File::open(file_path).expect ("Failed to open input file");
-            Box::new(BufReader::new(fs))
-        } 
-        else {
-            Box::new(io::stdin().lock())
-        };
+        println!("Reading from file: {}", file_path);
+        let fs = File::open(file_path).expect("Failed to open input file");
+        Box::new(BufReader::new(fs))
+    } else {
+        Box::new(io::stdin().lock())
+    };
 
     if args_map.contains_key("--input-format") {
-        input_format = args_map.get ("--input-format").expect ("Empty --input-format argument!").to_string ();
+        input_format = args_map
+            .get("--input-format")
+            .expect("Empty --input-format argument!")
+            .to_string();
     }
 
-    println! ("Input format: {}", input_format);
+    println!("Input format: {}", input_format);
 
-    let mut output_format = "csv".to_string ();
-    let mut writer: Box<dyn Write> = 
-    
-        if args_map.contains_key("--output") {
+    let mut output_format = "csv".to_string();
+    let mut writer: Box<dyn Write> = if args_map.contains_key("--output") {
+        let file_path = args_map.get("--output").expect("Empty --output argument!");
 
-            let file_path = args_map.get ("--output").expect ("Empty --output argument!");
+        output_format = extract_format(file_path);
 
-            output_format = extract_format(file_path);
-
-            println!("Writing to file: {}", file_path);
-            let fs = File::create(file_path).expect ("Failed to open output file");
-            Box::new(BufWriter::new(fs))
-        } else {
-            Box::new(io::stdout().lock())
-        };
+        println!("Writing to file: {}", file_path);
+        let fs = File::create(file_path).expect("Failed to open output file");
+        Box::new(BufWriter::new(fs))
+    } else {
+        Box::new(io::stdout().lock())
+    };
 
     if args_map.contains_key("--output-format") {
-        output_format = args_map.get ("--output-format").expect ("Empty --output-format argument!").to_string ();
+        output_format = args_map
+            .get("--output-format")
+            .expect("Empty --output-format argument!")
+            .to_string();
     }
 
-    println! ("Output format: {}", output_format);
+    println!("Output format: {}", output_format);
 
-    let records = 
-    
-        match Parser::from_read (reader, &input_format) {
-            Ok(records) => records,
-            Err(err) =>{
-                eprintln!("Error parsing input: {:?}", err);
-                return;
-            }
-        };
+    let records = match Parser::from_read(reader, &input_format) {
+        Ok(records) => records,
+        Err(err) => {
+            eprintln!("Error parsing input: {:?}", err);
+            return;
+        }
+    };
 
     let write_result = Parser::write_to(writer, &records, &output_format);
-    if let Err (ParserError::ParseError (e)) = write_result {
-        eprintln! ("Write to outpu error: {}", e);
+    if let Err(ParserError::ParseError(e)) = write_result {
+        eprintln!("Write to outpu error: {}", e);
     }
-    
 }
 
 #[cfg(test)]
@@ -139,10 +138,9 @@ mod tests {
         let file_path = "_test.csv";
 
         let mut f = File::create(file_path).unwrap();
-        //writeln! (f, "John;100;[]");      
+        //writeln! (f, "John;100;[]");
 
         //assert_eq!(storage.get_balance(&"John".to_string()), Some(100));
-
 
         fs::remove_file(file_path).unwrap();
     }
