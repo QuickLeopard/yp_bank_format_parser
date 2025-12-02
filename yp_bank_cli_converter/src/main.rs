@@ -1,17 +1,16 @@
-use std::collections::HashMap;
-use std::fmt::write;
+
 use std::io;
-use std::io::BufReader;
-use std::io::Read;
-use std::io::{BufRead, BufWriter, Write};
+use std::io::{Read, BufRead, BufReader, BufWriter, Write};
+
+use std::collections::HashMap;
 
 use std::fs::{self, File};
 
 use std::env;
 
-use yp_bank_format_parser::parsers::error::ParserError;
-use yp_bank_format_parser::parsers::parser::Parser;
-use yp_bank_format_parser::parsers::types::{Status, TransactionType, YPBankCsvRecord};
+use yp_bank_parser_lib::parsers::error::ParserError;
+use yp_bank_parser_lib::parsers::parser::Parser;
+use yp_bank_parser_lib::parsers::types::{Status, TransactionType, YPBankCsvRecord};
 
 fn usage() {
     println!("Использование:");

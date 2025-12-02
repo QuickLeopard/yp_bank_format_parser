@@ -1,8 +1,6 @@
-[package]
-name = "yp_bank_format_parser"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-byteorder = "1.4"
-thiserror = "1.0"
+[workspace]
+members = [
+    "yp_bank_parser_lib",
+    "yp_bank_cli_converter",
+    "yp_bank_cli_comparer",
+]
