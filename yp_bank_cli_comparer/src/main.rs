@@ -92,7 +92,7 @@ fn main() {
                 }
             },
             None => {
-                println!("Record with TX_ID {} found in file1 but not in file2", tx_id);
+                println!("Record with TX_ID {} found in '{}' but not in '{}'", tx_id, file1_path, file2_path);
                 diffs += 1;
             }
         }
