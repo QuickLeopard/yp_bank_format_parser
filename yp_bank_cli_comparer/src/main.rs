@@ -1,4 +1,5 @@
 
+use core::hash;
 use std::io;
 use std::io::{Read, BufRead, BufReader, BufWriter, Write};
 
@@ -70,5 +71,36 @@ fn main() {
 
     let records2 = Parser::from_read(reader2, &format2)
         .expect("Failed to parse records from file2");
+
+    let hashes1: HashMap<u64, &YPBankRecord> = records1.iter()
+        .map(|record| (record.tx_id, record))
+        .collect();
     
+    let hashes2: HashMap<u64, &YPBankRecord> = records2.iter()
+        .map(|record| (record.tx_id, record))
+        .collect();
+
+    let mut diffs = 0;
+    for (tx_id, record1) in &hashes1 {
+        match hashes2.get(tx_id) {
+            Some(record2) => {
+                if record1 != record2 {
+                    println!("Difference found for TX_ID {}:", tx_id);
+                    println!("  File1: {:?}", record1);
+                    println!("  File2: {:?}", record2);
+                    diffs += 1;
+                }
+            },
+            None => {
+                println!("Record with TX_ID {} found in file1 but not in file2", tx_id);
+                diffs += 1;
+            }
+        }
+    }
+
+    if diffs == 0 {
+        println!("No differences found.");
+    } else {
+        println!("Total differences found: {}", diffs);
+    }
 }
