@@ -53,7 +53,7 @@ fn main() {
 
     let mut format2 = "csv".to_string();
     let file2_path = args_map.get("--file2").expect("Empty --input argument!");
-    let fs2 = File::open(file1_path).expect("Failed to open input file2");
+    let fs2 = File::open(file2_path).expect("Failed to open input file2");
     let reader2 = BufReader::new(fs2);
     
     format2 = extract_format(file2_path);
@@ -64,5 +64,11 @@ fn main() {
             .expect("Empty --format2 argument!")
             .to_string();
     }
+
+    let records1 = Parser::from_read(reader1, &format1)
+        .expect("Failed to parse records from file1");
+
+    let records2 = Parser::from_read(reader2, &format2)
+        .expect("Failed to parse records from file2");
     
 }
