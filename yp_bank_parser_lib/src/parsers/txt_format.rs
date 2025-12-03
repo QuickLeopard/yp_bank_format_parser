@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
-use crate::parsers::types::{Status, TransactionType, YPBankCsvRecord};
+use crate::parsers::types::{Status, TransactionType, YPBankRecord};
 
 pub struct YPBankTxtParser;
 
@@ -67,7 +67,7 @@ impl YPBankTxtParser {
             .collect()
     }
 
-    pub fn from_read<R: Read + BufRead>(reader: R) -> Result<Vec<YPBankCsvRecord>, ParserError> {
+    pub fn from_read<R: Read + BufRead>(reader: R) -> Result<Vec<YPBankRecord>, ParserError> {
         let sections = Self::read_sections(reader)?;
 
         let dict = Self::parse_sections(sections)?;
@@ -79,7 +79,7 @@ impl YPBankTxtParser {
         let records = dict
             .into_iter()
             .map(|d| {
-                Ok(YPBankCsvRecord {
+                Ok(YPBankRecord {
                     tx_id: d
                         .get("tx_id")
                         .ok_or_else(|| ParserError::ParseError("Missing tx_id".to_string()))?
@@ -138,7 +138,14 @@ impl YPBankTxtParser {
                     timestamp: d
                         .get("timestamp")
                         .ok_or_else(|| ParserError::ParseError("Missing timestamp".to_string()))?
-                        .to_string(),
+                        .parse ()
+                        .map_err(|e| {
+                            ParserError::ParseError(format!(
+                                "Failed to parse timestamp: {} error: {}",
+                                d.get("timestamp").unwrap(),
+                                e
+                            ))
+                        })?,
                     status: d
                         .get("status")
                         .ok_or_else(|| ParserError::ParseError("Missing status".to_string()))?
@@ -163,7 +170,7 @@ impl YPBankTxtParser {
 
     pub fn write_to<W: Write>(
         mut writer: W,
-        records: &[YPBankCsvRecord],
+        records: &[YPBankRecord],
     ) -> Result<(), ParserError> {
         for record in records.iter().enumerate() {
             writeln!(writer, "# Record {} ({:?})", record.0, record.1.tx_type);

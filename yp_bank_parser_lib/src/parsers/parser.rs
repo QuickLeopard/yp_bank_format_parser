@@ -4,7 +4,7 @@ use crate::parsers::error::ParserError;
 use crate::parsers::bin_format::YPBankBinParser;
 use crate::parsers::csv_format::YPBankCsvParser;
 use crate::parsers::txt_format::YPBankTxtParser;
-use crate::parsers::types::YPBankCsvRecord;
+use crate::parsers::types::YPBankRecord;
 
 pub struct Parser;
 
@@ -12,7 +12,7 @@ impl Parser {
     pub fn from_read<R: Read + BufRead>(
         reader: R,
         format: &str,
-    ) -> Result<Vec<YPBankCsvRecord>, ParserError> {
+    ) -> Result<Vec<YPBankRecord>, ParserError> {
         match format.to_lowercase().as_str() {
             "csv" => YPBankCsvParser::from_read(reader),
             "txt" => YPBankTxtParser::from_read(reader),
@@ -26,7 +26,7 @@ impl Parser {
 
     pub fn write_to<W: Write>(
         mut writer: W,
-        records: &[YPBankCsvRecord],
+        records: &[YPBankRecord],
         format: &str,
     ) -> Result<(), ParserError> {
         match format.to_lowercase().as_str() {

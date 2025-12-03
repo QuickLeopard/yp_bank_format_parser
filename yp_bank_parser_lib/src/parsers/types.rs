@@ -3,22 +3,22 @@ use std::str::FromStr;
 use crate::parsers::error::ParserError;
 
 #[derive(Debug, Clone)]
-pub struct YPBankCsvRecord {
+pub struct YPBankRecord {
     pub tx_id: u64,
     pub tx_type: TransactionType,
     pub from_user_id: u64,
     pub to_user_id: u64,
     pub amount: i64,
-    pub timestamp: String,
+    pub timestamp: u64,
     pub status: Status,
     pub description: String,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum TransactionType {
-    DEPOSIT = 0,
-    TRANSFER = 1,
-    WITHDRAWAL = 2,
+    Deposit = 0,
+    Transfer = 1,
+    Withdrawal = 2,
 }
 
 impl FromStr for TransactionType {
@@ -26,9 +26,9 @@ impl FromStr for TransactionType {
 
     fn from_str(input: &str) -> Result<TransactionType, Self::Err> {
         match input.to_uppercase().as_str() {
-            "DEPOSIT" => Ok(TransactionType::DEPOSIT),
-            "WITHDRAWAL" => Ok(TransactionType::WITHDRAWAL),
-            "TRANSFER" => Ok(TransactionType::TRANSFER),
+            "DEPOSIT" => Ok(TransactionType::Deposit),
+            "WITHDRAWAL" => Ok(TransactionType::Withdrawal),
+            "TRANSFER" => Ok(TransactionType::Transfer),
             _ => Err("Wrong transaction type".to_string()),
         }
     }
@@ -39,19 +39,36 @@ impl TryFrom<u8> for TransactionType {
     
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(TransactionType::DEPOSIT),
-            1 => Ok(TransactionType::TRANSFER),
-            2 => Ok(TransactionType::WITHDRAWAL),
+            0 => Ok(TransactionType::Deposit),
+            1 => Ok(TransactionType::Transfer),
+            2 => Ok(TransactionType::Withdrawal),
             _ => Err(ParserError::ParseError(format! ("Wrong Transaction Type: {}", value))),
         }
     }
 }
 
+impl TransactionType {
+    /// Parse a transaction type from a byte value.
+    pub fn from_byte(value: u8) -> Result<Self, ParserError> {
+        match value {
+            0 => Ok(TransactionType::Deposit),
+            1 => Ok(TransactionType::Transfer),
+            2 => Ok(TransactionType::Withdrawal),
+            _ => Err(ParserError::WrongTransactionType(value)),
+        }
+    }
+
+    /// Convert to byte representation.
+    pub fn to_byte(self) -> u8 {
+        self as u8
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum Status {
-    SUCCESS = 0,
-    FAILURE = 1,
-    PENDING = 2,
+    Success = 0,
+    Failure = 1,
+    Pending = 2,
 }
 
 impl FromStr for Status {
@@ -59,9 +76,9 @@ impl FromStr for Status {
 
     fn from_str(input: &str) -> Result<Status, Self::Err> {
         match input.to_uppercase().as_str() {
-            "PENDING" => Ok(Status::PENDING),
-            "SUCCESS" => Ok(Status::SUCCESS),
-            "FAILURE" => Ok(Status::FAILURE),
+            "PENDING" => Ok(Status::Pending),
+            "SUCCESS" => Ok(Status::Success),
+            "FAILURE" => Ok(Status::Failure),
             _ => Err("Wrong status".to_string()),
         }
     }
@@ -72,10 +89,27 @@ impl TryFrom<u8> for Status {
     
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Ok(Status::SUCCESS ),
-            1 => Ok(Status::FAILURE),
-            2 => Ok(Status::PENDING),
+            0 => Ok(Status::Success),
+            1 => Ok(Status::Failure),
+            2 => Ok(Status::Pending),
             _ => Err(ParserError::ParseError(format! ("Wrong Status: {}", value))),
         }
+    }
+}
+
+impl Status {
+    /// Parse a status from a byte value.
+    pub fn from_byte(value: u8) -> Result<Self, ParserError> {
+        match value {
+            0 => Ok(Status::Success),
+            1 => Ok(Status::Failure),
+            2 => Ok(Status::Pending),
+            _ => Err(ParserError::WrongStatusType(value)),
+        }
+    }
+
+    /// Convert to byte representation.
+    pub fn to_byte(self) -> u8 {
+        self as u8
     }
 }

@@ -3,7 +3,7 @@ use std::io::{Read, BufRead, Write};
 use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
-use crate::parsers::types::{Status, TransactionType, YPBankCsvRecord};
+use crate::parsers::types::{Status, TransactionType, YPBankRecord};
 
 const PROPER_HEADER: &str =
     "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION";
@@ -16,7 +16,7 @@ impl YPBankCsvParser {
         header.trim().to_uppercase() == expected_header
     }
 
-    pub fn from_read<R: Read + BufRead>(reader: R) -> Result<Vec<YPBankCsvRecord>, ParserError> {
+    pub fn from_read<R: Read + BufRead>(reader: R) -> Result<Vec<YPBankRecord>, ParserError> {
         let mut lines = reader.lines();
 
         let header = match lines.next() {
@@ -38,7 +38,7 @@ impl YPBankCsvParser {
                 }
                 Ok(l) => l,
             };
-            let record = YPBankCsvRecord::from_string(&line)?;
+            let record = YPBankRecord::from_string(&line)?;
             records.push(record);
         }
         Ok(records)
@@ -46,7 +46,7 @@ impl YPBankCsvParser {
 
     pub fn write_to<W: Write>(
         mut writer: W,
-        records: &[YPBankCsvRecord],
+        records: &[YPBankRecord],
     ) -> Result<(), ParserError> {
         if records.is_empty() {
             return Err(ParserError::ParseError("No records to write".to_string()));
@@ -67,8 +67,8 @@ impl YPBankCsvParser {
     }
 }
 
-impl YPBankCsvRecord {
-    pub fn from_read<R: Read + BufRead>(reader: R) -> Result<Vec<YPBankCsvRecord>, ParserError> {
+impl YPBankRecord {
+    pub fn from_read<R: Read + BufRead>(reader: R) -> Result<Vec<YPBankRecord>, ParserError> {
         // Implementation for reading CSV and parsing into YPBankCsvRecord structs
 
         let mut records = Vec::new();
@@ -99,7 +99,7 @@ impl YPBankCsvRecord {
     pub fn from_string(s: &str) -> Result<Self, ParserError> {
         let parts: Vec<&str> = s.split(',').collect();
         if parts.len() == 8 {
-            Ok(YPBankCsvRecord {
+            Ok(YPBankRecord {
                 tx_id: parts[0].parse().map_err(|e| {
                     ParserError::ParseError(format!(
                         "Failed to parse tx_id: {} error: {}",
@@ -130,7 +130,12 @@ impl YPBankCsvRecord {
                         parts[4], e
                     ))
                 })?,
-                timestamp: parts[5].to_string(),
+                timestamp: parts[5].parse ().map_err(|e| {
+                    ParserError::ParseError(format!(
+                        "Failed to parse timestamp: {} error: {}",
+                        parts[5], e
+                    ))
+                })?,
                 status: parts[6].parse().map_err(|e| {
                     ParserError::ParseError(format!(
                         "Failed to parse status: {} error: {}",

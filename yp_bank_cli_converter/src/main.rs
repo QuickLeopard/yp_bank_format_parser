@@ -10,7 +10,7 @@ use std::env;
 
 use yp_bank_parser_lib::parsers::error::ParserError;
 use yp_bank_parser_lib::parsers::parser::Parser;
-use yp_bank_parser_lib::parsers::types::{Status, TransactionType, YPBankCsvRecord};
+use yp_bank_parser_lib::parsers::types::{Status, TransactionType, YPBankRecord};
 
 fn usage() {
     println!("Использование:");
