@@ -4,6 +4,26 @@ pub enum ParserError {
     Io(#[from] std::io::Error),
     #[error("Parse Error: {0}")]
     ParseError(String),
+    #[error("Wrong CSV Header: {0}")]
+    WrongCsvHeader(String),
+     #[error("Unsupported fromat: {0}")]
+    UnsupportedFormat(String),
+    #[error("Missing TxId")]
+    MissingTxId,
+    #[error("Missing From User Id")]
+    MissingFromUserId,
+     #[error("Missing To User Id")]
+    MissingToUserId,
+    #[error("Missing Amount")]
+    MissingAmount,
+    #[error("Missing Timestamp")]
+    MissingTimestamp,
+    #[error("Missing Status")]
+    MissingStatus,
+    #[error("Missing Transaction Type")]
+    MissingTransactionType,
+    #[error("Missing Description")]
+    MissingDescription,
     #[error("Wrong Transaction Type: {0}")]
     WrongTransactionType(u8),
      #[error("Wrong status Type: {0}")]

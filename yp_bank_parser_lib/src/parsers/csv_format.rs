@@ -1,9 +1,9 @@
 
 use std::io::{Read, BufRead, Write};
-use std::str::FromStr;
+//use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
-use crate::parsers::types::{Status, TransactionType, YPBankRecord};
+use crate::parsers::types::{YPBankRecord};
 
 const PROPER_HEADER: &str =
     "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION";
@@ -26,7 +26,7 @@ impl YPBankCsvParser {
         };
 
         if !Self::check_header(&header) {
-            return Err(ParserError::ParseError("Wrong header".to_string()));
+            return Err(ParserError::WrongCsvHeader(header.to_string ()));
         }
 
         let mut records = Vec::new();
@@ -60,7 +60,7 @@ impl YPBankCsvParser {
         for record in records {
             record
                 .write_to(&mut writer)
-                .map_err(|e| ParserError::ParseError(e))?;
+                .map_err(ParserError::ParseError)?;
         }
 
         Ok(())
@@ -85,16 +85,7 @@ impl YPBankRecord {
         }
 
         Ok(records)
-    }
-
-    pub fn from_read2<R: Read + BufRead>(mut reader: R) -> Result<Self, ParserError> {
-        // Implementation for reading CSV and parsing into YPBankCsvRecord structs
-
-        let mut line = String::new();
-        let _ = reader.read_line(&mut line);
-
-        Self::from_string(&line)
-    }
+    }    
 
     pub fn from_string(s: &str) -> Result<Self, ParserError> {
         let parts: Vec<&str> = s.split(',').collect();

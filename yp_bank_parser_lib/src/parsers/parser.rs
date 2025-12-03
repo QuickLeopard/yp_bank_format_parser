@@ -17,15 +17,12 @@ impl Parser {
             "csv" => YPBankCsvParser::from_read(reader),
             "txt" => YPBankTxtParser::from_read(reader),
             "bin" => YPBankBinParser::from_read(reader),
-            _ => Err(ParserError::ParseError(format!(
-                "Unsupported format: {}",
-                format
-            ))),
+            _ => Err(ParserError::UnsupportedFormat(format.to_string ())),
         }
     }
 
     pub fn write_to<W: Write>(
-        mut writer: W,
+        writer: W,
         records: &[YPBankRecord],
         format: &str,
     ) -> Result<(), ParserError> {
@@ -33,10 +30,7 @@ impl Parser {
             "csv" => YPBankCsvParser::write_to(writer, records),
             "txt" => YPBankTxtParser::write_to(writer, records),
             "bin" => YPBankBinParser::write_to(writer, records),
-            _ => Err(ParserError::ParseError(format!(
-                "Unsupported format: {}",
-                format
-            ))),
+             _ => Err(ParserError::UnsupportedFormat(format.to_string ())),
         }
     }
 }

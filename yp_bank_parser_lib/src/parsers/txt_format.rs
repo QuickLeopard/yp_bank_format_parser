@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::io::{Read, Write};
-use std::str::FromStr;
+//use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
-use crate::parsers::types::{Status, TransactionType, YPBankRecord};
+use crate::parsers::types::{YPBankRecord};
 
 pub struct YPBankTxtParser;
 
@@ -82,7 +82,7 @@ impl YPBankTxtParser {
                 Ok(YPBankRecord {
                     tx_id: d
                         .get("tx_id")
-                        .ok_or_else(|| ParserError::ParseError("Missing tx_id".to_string()))?
+                        .ok_or_else(|| ParserError::MissingTxId)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -93,7 +93,7 @@ impl YPBankTxtParser {
                         })?,
                     tx_type: d
                         .get("tx_type")
-                        .ok_or_else(|| ParserError::ParseError("Missing tx_type".to_string()))?
+                        .ok_or_else(|| ParserError::MissingTransactionType)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -104,7 +104,7 @@ impl YPBankTxtParser {
                         })?,
                     from_user_id: d
                         .get("from_user_id")
-                        .ok_or_else(|| ParserError::ParseError("Missing from_user_id".to_string()))?
+                        .ok_or_else(|| ParserError::MissingFromUserId)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -115,7 +115,7 @@ impl YPBankTxtParser {
                         })?,
                     to_user_id: d
                         .get("to_user_id")
-                        .ok_or_else(|| ParserError::ParseError("Missing to_user_id".to_string()))?
+                        .ok_or_else(|| ParserError::MissingToUserId)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -126,7 +126,7 @@ impl YPBankTxtParser {
                         })?,
                     amount: d
                         .get("amount")
-                        .ok_or_else(|| ParserError::ParseError("Missing amount".to_string()))?
+                        .ok_or_else(|| ParserError::MissingAmount)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -137,7 +137,7 @@ impl YPBankTxtParser {
                         })?,
                     timestamp: d
                         .get("timestamp")
-                        .ok_or_else(|| ParserError::ParseError("Missing timestamp".to_string()))?
+                        .ok_or_else(|| ParserError::MissingTimestamp)?
                         .parse ()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -148,18 +148,18 @@ impl YPBankTxtParser {
                         })?,
                     status: d
                         .get("status")
-                        .ok_or_else(|| ParserError::ParseError("Missing status".to_string()))?
+                        .ok_or_else(|| ParserError::MissingStatus)?
                         .parse()
                         .map_err(|e| {
-                            ParserError::ParseError(format!(
+                            ParserError::WrongStatusType(d.get("status").unwrap ().parse ().unwrap ()) /*(format!(
                                 "Failed to parse status: {} error: {}",
                                 d.get("status").unwrap(),
                                 e
-                            ))
+                            ))*/
                         })?,
                     description: d
                         .get("description")
-                        .ok_or_else(|| ParserError::ParseError("Missing description".to_string()))?
+                        .ok_or_else(|| ParserError::MissingDescription)?
                         .to_string(),
                 })
             })

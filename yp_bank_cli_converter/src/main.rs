@@ -11,6 +11,7 @@ use std::env;
 use yp_bank_parser_lib::parsers::error::ParserError;
 use yp_bank_parser_lib::parsers::parser::Parser;
 use yp_bank_parser_lib::parsers::types::{Status, TransactionType, YPBankRecord};
+use yp_bank_parser_lib::{extract_format, parse_cli_args};
 
 fn usage() {
     println!("Использование:");
@@ -18,42 +19,6 @@ fn usage() {
     println!("  --input-format <format>");
     println!("  --output <output_file>");
     println!("  --output-format <format>");
-}
-
-fn parse_cli_args(args: &[String]) -> HashMap<String, String> {
-    let mut dict = HashMap::new();
-
-    for chunk in args.chunks_exact(2) {
-        dict.insert(
-            chunk[0].trim().clone().to_string(),
-            chunk[1].trim().clone().to_string(),
-        );
-
-        if chunk[0] != "--input"
-            && chunk[0] != "--input-format"
-            && chunk[0] != "--output"
-            && chunk[0] != "--output-format"
-        {
-            panic!("Unknown CLI arguments: {} {}", chunk[0], chunk[1]);
-        }
-    }
-
-    dict
-}
-
-fn extract_format(file_path: &str) -> String {
-    let split_path: Vec<&str> = file_path.split(".").collect();
-    if split_path.len() > 1 {
-        if let Some(ext) = split_path.last() {
-            match *ext {
-                "csv" => return "csv".to_string(),
-                "txt" => return "txt".to_string(),
-                "bin" => return "bin".to_string(),
-                _ => return "csv".to_string(),
-            }
-        }
-    }
-    "csv".to_string()
 }
 
 fn main() {
@@ -66,7 +31,7 @@ fn main() {
         return;
     }
 
-    let args_map = parse_cli_args(&args);
+    let args_map = parse_cli_args(&args, &["--input", "--input-format", "--output", "--output-format"]);
 
     let mut input_format = "csv".to_string();
     let reader: Box<dyn BufRead> = if args_map.contains_key("--input") {
