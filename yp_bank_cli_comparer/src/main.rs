@@ -99,7 +99,7 @@ fn main() {
     }
 
     if diffs == 0 {
-        println!("No differences found.");
+        println!("The transaction records in '{}' and '{}' are identical.", file1_path, file2_path);
     } else {
         println!("Total differences found: {}", diffs);
     }
