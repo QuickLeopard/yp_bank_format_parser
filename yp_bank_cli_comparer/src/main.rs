@@ -44,11 +44,25 @@ fn main() {
     
     format1 = extract_format(file1_path);
 
+    if args_map.contains_key("--format1") {
+        format1 = args_map
+            .get("--format1")
+            .expect("Empty --format1 argument!")
+            .to_string();
+    }
+
     let mut format2 = "csv".to_string();
     let file2_path = args_map.get("--file2").expect("Empty --input argument!");
     let fs2 = File::open(file1_path).expect("Failed to open input file2");
     let reader2 = BufReader::new(fs2);
     
     format2 = extract_format(file2_path);
+
+    if args_map.contains_key("--format2") {
+        format2 = args_map
+            .get("--format2")
+            .expect("Empty --format2 argument!")
+            .to_string();
+    }
     
 }
