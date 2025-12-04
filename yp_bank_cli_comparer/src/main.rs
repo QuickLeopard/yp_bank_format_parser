@@ -1,7 +1,6 @@
-
 use core::hash;
 use std::io;
-use std::io::{Read, BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 
 use std::collections::HashMap;
 
@@ -42,7 +41,7 @@ fn main() {
     let file1_path = args_map.get("--file1").expect("Empty --input argument!");
     let fs1 = File::open(file1_path).expect("Failed to open input file1");
     let reader1 = BufReader::new(fs1);
-    
+
     format1 = extract_format(file1_path);
 
     if args_map.contains_key("--format1") {
@@ -56,7 +55,7 @@ fn main() {
     let file2_path = args_map.get("--file2").expect("Empty --input argument!");
     let fs2 = File::open(file2_path).expect("Failed to open input file2");
     let reader2 = BufReader::new(fs2);
-    
+
     format2 = extract_format(file2_path);
 
     if args_map.contains_key("--format2") {
@@ -66,17 +65,19 @@ fn main() {
             .to_string();
     }
 
-    let records1 = Parser::from_read(reader1, &format1)
-        .expect("Failed to parse records from file1");
+    let records1 =
+        Parser::from_read(reader1, &format1).expect("Failed to parse records from file1");
 
-    let records2 = Parser::from_read(reader2, &format2)
-        .expect("Failed to parse records from file2");
+    let records2 =
+        Parser::from_read(reader2, &format2).expect("Failed to parse records from file2");
 
-    let hashes1: HashMap<u64, &YPBankRecord> = records1.iter()
+    let hashes1: HashMap<u64, &YPBankRecord> = records1
+        .iter()
         .map(|record| (record.tx_id, record))
         .collect();
-    
-    let hashes2: HashMap<u64, &YPBankRecord> = records2.iter()
+
+    let hashes2: HashMap<u64, &YPBankRecord> = records2
+        .iter()
         .map(|record| (record.tx_id, record))
         .collect();
 
@@ -90,16 +91,22 @@ fn main() {
                     println!("  File2: {:?}", record2);
                     diffs += 1;
                 }
-            },
+            }
             None => {
-                println!("Record with TX_ID {} found in '{}' but not in '{}'", tx_id, file1_path, file2_path);
+                println!(
+                    "Record with TX_ID {} found in '{}' but not in '{}'",
+                    tx_id, file1_path, file2_path
+                );
                 diffs += 1;
             }
         }
     }
 
     if diffs == 0 {
-        println!("The transaction records in '{}' and '{}' are identical.", file1_path, file2_path);
+        println!(
+            "The transaction records in '{}' and '{}' are identical.",
+            file1_path, file2_path
+        );
     } else {
         println!("Total differences found: {}", diffs);
     }

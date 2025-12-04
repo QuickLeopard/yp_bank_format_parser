@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 //use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
-use crate::parsers::types::{YPBankRecord};
+use crate::parsers::types::YPBankRecord;
 
 pub struct YPBankTxtParser;
 
@@ -138,7 +138,7 @@ impl YPBankTxtParser {
                     timestamp: d
                         .get("timestamp")
                         .ok_or_else(|| ParserError::MissingTimestamp)?
-                        .parse ()
+                        .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
                                 "Failed to parse timestamp: {} error: {}",
@@ -151,10 +151,10 @@ impl YPBankTxtParser {
                         .ok_or_else(|| ParserError::MissingStatus)?
                         .parse()
                         .map_err(|e| {
-                            ParserError::WrongStatusType(d.get("status").unwrap ().parse ().unwrap ()) /*(format!(
-                                "Failed to parse status: {} error: {}",
-                                d.get("status").unwrap(),
-                                e
+                            ParserError::WrongStatusType(d.get("status").unwrap().parse().unwrap()) /*(format!(
+                            "Failed to parse status: {} error: {}",
+                            d.get("status").unwrap(),
+                            e
                             ))*/
                         })?,
                     description: d
@@ -168,10 +168,7 @@ impl YPBankTxtParser {
         Ok(records)
     }
 
-    pub fn write_to<W: Write>(
-        mut writer: W,
-        records: &[YPBankRecord],
-    ) -> Result<(), ParserError> {
+    pub fn write_to<W: Write>(mut writer: W, records: &[YPBankRecord]) -> Result<(), ParserError> {
         for record in records.iter().enumerate() {
             writeln!(writer, "# Record {} ({:?})", record.0, record.1.tx_type);
             writeln!(writer, "tx_id: {}", record.1.tx_id);

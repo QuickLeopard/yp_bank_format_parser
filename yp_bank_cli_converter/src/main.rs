@@ -1,6 +1,5 @@
-
 use std::io;
-use std::io::{Read, BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 
 use std::collections::HashMap;
 
@@ -31,7 +30,10 @@ fn main() {
         return;
     }
 
-    let args_map = parse_cli_args(&args, &["--input", "--input-format", "--output", "--output-format"]);
+    let args_map = parse_cli_args(
+        &args,
+        &["--input", "--input-format", "--output", "--output-format"],
+    );
 
     let mut input_format = "csv".to_string();
     let reader: Box<dyn BufRead> = if args_map.contains_key("--input") {

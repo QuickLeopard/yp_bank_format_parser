@@ -6,13 +6,13 @@ pub enum ParserError {
     ParseError(String),
     #[error("Wrong CSV Header: {0}")]
     WrongCsvHeader(String),
-     #[error("Unsupported fromat: {0}")]
+    #[error("Unsupported fromat: {0}")]
     UnsupportedFormat(String),
     #[error("Missing TxId")]
     MissingTxId,
     #[error("Missing From User Id")]
     MissingFromUserId,
-     #[error("Missing To User Id")]
+    #[error("Missing To User Id")]
     MissingToUserId,
     #[error("Missing Amount")]
     MissingAmount,
@@ -26,18 +26,12 @@ pub enum ParserError {
     MissingDescription,
     #[error("Wrong Transaction Type: {0}")]
     WrongTransactionType(u8),
-     #[error("Wrong status Type: {0}")]
-    WrongStatusType(u8),    
+    #[error("Wrong status Type: {0}")]
+    WrongStatusType(u8),
     #[error("Unexpected EOF: expected {expected} bytes, got {actual} bytes")]
-    UnexpectedEof {
-        expected: usize,
-        actual: usize,
-    },
+    UnexpectedEof { expected: usize, actual: usize },
     #[error("Description length overflow: desc_len = {desc_len}, remaining bytes = {remaining}")]
-    DescriptionOverflow {
-        desc_len: u32,
-        remaining: usize,
-    },
+    DescriptionOverflow { desc_len: u32, remaining: usize },
     #[error("Invalid magic bytes: expected YPBN (0x59504E42), got {0:02X?}")]
     InvalidMagic([u8; 4]),
     #[error("Record size too small: {0} bytes (minimum: {1})")]
