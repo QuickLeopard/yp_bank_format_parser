@@ -2,8 +2,12 @@
 pub enum ParserError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("Parse Error: {0}")]
-    ParseError(String),
+    #[error("UTF-8 decoding error: {0}")]
+    Utf8Error(#[from] std::string::FromUtf8Error),
+    #[error("Try From Slice error: {0}")]
+    TryFromSliceError(#[from] std::array::TryFromSliceError),
+    #[error("Parse Error: {0}")]    
+    ParseError(String),    
     #[error("Wrong CSV Header: {0}")]
     WrongCsvHeader(String),
     #[error("Unsupported fromat: {0}")]
@@ -36,6 +40,6 @@ pub enum ParserError {
     InvalidMagic([u8; 4]),
     #[error("Record size too small: {0} bytes (minimum: {1})")]
     RecordTooSmall(u32, usize),
-    #[error("UTF-8 decoding error: {0}")]
-    Utf8Error(#[from] std::string::FromUtf8Error),
+    #[error("Record size too large: {0} bytes (maximum: {1})")]
+    RecordTooLarge(u32, usize),   
 }

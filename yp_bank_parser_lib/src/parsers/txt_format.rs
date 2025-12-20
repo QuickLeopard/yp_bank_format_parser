@@ -3,7 +3,6 @@ use std::io::BufRead;
 use std::io::{Read, Write};
 
 use crate::parsers::error::ParserError;
-use crate::parsers::parser;
 use crate::parsers::types::{YPBankRecord, TransactionType, Status};
 
 pub struct YPBankTxtParser;

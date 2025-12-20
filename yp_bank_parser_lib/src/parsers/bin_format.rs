@@ -1,12 +1,11 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
-use std::array::TryFromSliceError;
 use std::io::{Read, Write};
 
 use crate::parsers::error::ParserError;
 use crate::parsers::types::{Status, TransactionType, YPBankRecord};
 
-use crate::{HEADER_SIZE, MAGIC, MIN_BODY_SIZE};
+use crate::{HEADER_SIZE, MAGIC, MIN_BODY_SIZE, MAX_RECORD_SIZE};
 
 const MAGIC_HEADER: u32 = 0x5950424E; // 'YPBN' in ASCII
 
@@ -23,122 +22,94 @@ impl YPBankBinParser {
         let mut header_buf = [0u8; HEADER_SIZE];
 
         loop {
-            // Try to read the header
             match reader.read_exact(&mut header_buf) {
                 Ok(()) => {}
-                Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-                    // End of file reached cleanly
-                    break;
-                }
+                Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
                 Err(e) => return Err(ParserError::Io(e)),
             }
 
-            // Validate magic bytes
-            let magic: [u8; 4] = header_buf[0..4].try_into().map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?;
+            let magic: [u8; 4] = header_buf[0..4].try_into()?;
             if magic != MAGIC {
                 return Err(ParserError::InvalidMagic(magic));
             }
 
-            // Read record size (big-endian u32)
-            let record_size = u32::from_be_bytes(header_buf[4..8].try_into().map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?);
-
-            if (record_size as usize) < MIN_BODY_SIZE {
+            let record_size = u32::from_be_bytes(header_buf[4..8].try_into()?);
+            
+            // Validate size bounds
+            if record_size < MIN_BODY_SIZE as u32 {
                 return Err(ParserError::RecordTooSmall(record_size, MIN_BODY_SIZE));
             }
+            
+            if record_size > MAX_RECORD_SIZE as u32 {
+                return Err(ParserError::RecordTooLarge(record_size, MAX_RECORD_SIZE));
+            }
 
-            // Read the record body
-            let mut body = vec![0u8; record_size as usize];
-            reader.read_exact(&mut body)?;
-
-            // Parse the record
-            let record = Self::parse_record_body(&body)?;
+            // Parse record directly from reader without pre-buffering entire body
+            let record = Self::parse_record_from_reader(&mut reader, record_size)?;
             records.push(record);
         }
 
         Ok(records)
     }
 
-    /// Parse a single record body from a byte slice.
-    fn parse_record_body(body: &[u8]) -> Result<YPBankRecord, ParserError> {
-        if body.len() < MIN_BODY_SIZE {
-            return Err(ParserError::UnexpectedEof {
-                expected: MIN_BODY_SIZE,
-                actual: body.len(),
-            });
-        }
-
-        let mut offset = 0;
-
+    fn parse_record_from_reader<R: Read>(reader: &mut R, record_size: u32) -> Result<YPBankRecord, ParserError> {
+        // Use take() to limit reading to exactly record_size bytes
+        let mut limited_reader = reader.take(record_size as u64);
+        
+        let mut buffer = [0u8; 8];
+        
         // TX_ID: 8 bytes, u64 big-endian
-        let tx_id = u64::from_be_bytes(
-            body[offset..offset + 8]
-                .try_into()
-                .map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?,
-        );
-        offset += 8;
-
+        limited_reader.read_exact(&mut buffer)?;
+        let tx_id = u64::from_be_bytes(buffer);
+        
         // TX_TYPE: 1 byte
-        let tx_type = TransactionType::from_byte(body[offset])?;
-        offset += 1;
-
-        // FROM_USER_ID: 8 bytes, u64 big-endian
-        let from_user_id = u64::from_be_bytes(
-            body[offset..offset + 8]
-                .try_into()
-                .map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?,
-        );
-        offset += 8;
-
-        // TO_USER_ID: 8 bytes, u64 big-endian
-        let to_user_id = u64::from_be_bytes(
-            body[offset..offset + 8]
-                .try_into()
-                .map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?,
-        );
-        offset += 8;
-
-        // AMOUNT: 8 bytes, i64 big-endian
-        let amount = i64::from_be_bytes(
-            body[offset..offset + 8]
-                .try_into()
-                .map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?,
-        );
-        offset += 8;
-
-        // TIMESTAMP: 8 bytes, u64 big-endian
-        let timestamp = u64::from_be_bytes(
-            body[offset..offset + 8]
-                .try_into()
-                .map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?,
-        );
-        offset += 8;
-
+        let mut tx_type_buf = [0u8; 1];
+        limited_reader.read_exact(&mut tx_type_buf)?;
+        let tx_type = TransactionType::from_byte(tx_type_buf[0])?;
+        
+        // FROM_USER_ID: 8 bytes
+        limited_reader.read_exact(&mut buffer)?;
+        let from_user_id = u64::from_be_bytes(buffer);
+        
+        // TO_USER_ID: 8 bytes
+        limited_reader.read_exact(&mut buffer)?;
+        let to_user_id = u64::from_be_bytes(buffer);
+        
+        // AMOUNT: 8 bytes
+        limited_reader.read_exact(&mut buffer)?;
+        let amount = i64::from_be_bytes(buffer);
+        
+        // TIMESTAMP: 8 bytes
+        limited_reader.read_exact(&mut buffer)?;
+        let timestamp = u64::from_be_bytes(buffer);
+        
         // STATUS: 1 byte
-        let status = Status::from_byte(body[offset])?;
-        offset += 1;
-
-        // DESC_LEN: 4 bytes, u32 big-endian
-        let desc_len = u32::from_be_bytes(
-            body[offset..offset + 4]
-                .try_into()
-                .map_err(|e: TryFromSliceError| ParserError::ParseError(e.to_string()))?,
-        );
-        offset += 4;
-
-        // DESCRIPTION: DESC_LEN bytes, UTF-8
-        let remaining = body.len() - offset;
-        if (desc_len as usize) > remaining {
-            return Err(ParserError::DescriptionOverflow {
-                desc_len,
-                remaining,
+        let mut status_buf = [0u8; 1];
+        limited_reader.read_exact(&mut status_buf)?;
+        let status = Status::from_byte(status_buf[0])?;
+        
+        // DESC_LEN: 4 bytes
+        let mut desc_len_buf = [0u8; 4];
+        limited_reader.read_exact(&mut desc_len_buf)?;
+        let desc_len = u32::from_be_bytes(desc_len_buf);
+        
+        // Read description
+        if desc_len > (record_size - 42) { // 42 = sum of all fixed field sizes
+            return Err(ParserError::DescriptionOverflow { 
+                desc_len, 
+                remaining: record_size as usize - 42 
             });
         }
-
-        let description = if desc_len > 0 {
-            String::from_utf8(body[offset..offset + desc_len as usize].to_vec())?
-        } else {
-            String::new()
-        };
+        
+        let mut description_bytes = vec![0u8; desc_len as usize];
+        limited_reader.read_exact(&mut description_bytes)?;
+        let description = String::from_utf8(description_bytes)?;
+        
+        // Ensure we've consumed exactly record_size bytes
+        if limited_reader.limit() != 0 {
+            // This should not happen if our calculations are correct
+            return Err(ParserError::ParseError(format!("Did not consume all record bytes: {} remaining", limited_reader.limit())));
+        }
 
         Ok(YPBankRecord {
             tx_id,
@@ -150,7 +121,7 @@ impl YPBankBinParser {
             status,
             description,
         })
-    }
+    }    
 
     pub fn write_to<W: Write>(mut writer: W, records: &[YPBankRecord]) -> Result<(), ParserError> {
         if records.is_empty() {

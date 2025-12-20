@@ -11,6 +11,8 @@ pub const HEADER_SIZE: usize = 8;
 /// Minimum body size in bytes (fixed fields without description)
 pub const MIN_BODY_SIZE: usize = 46;
 
+pub const MAX_RECORD_SIZE: usize = 10 * 1024 * 1024;
+
 pub fn extract_format(file_path: &str) -> String {
     let split_path: Vec<&str> = file_path.split(".").collect();
     if split_path.len() > 1 
