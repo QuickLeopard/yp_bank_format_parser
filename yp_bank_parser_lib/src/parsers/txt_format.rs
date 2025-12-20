@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::io::{Read, Write};
-//use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
 use crate::parsers::types::{YPBankRecord};
@@ -82,7 +81,7 @@ impl YPBankTxtParser {
                 Ok(YPBankRecord {
                     tx_id: d
                         .get("tx_id")
-                        .ok_or_else(|| ParserError::MissingTxId)?
+                        .ok_or(ParserError::MissingTxId)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -93,7 +92,7 @@ impl YPBankTxtParser {
                         })?,
                     tx_type: d
                         .get("tx_type")
-                        .ok_or_else(|| ParserError::MissingTransactionType)?
+                        .ok_or(ParserError::MissingTransactionType)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -104,7 +103,7 @@ impl YPBankTxtParser {
                         })?,
                     from_user_id: d
                         .get("from_user_id")
-                        .ok_or_else(|| ParserError::MissingFromUserId)?
+                        .ok_or(ParserError::MissingFromUserId)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -115,7 +114,7 @@ impl YPBankTxtParser {
                         })?,
                     to_user_id: d
                         .get("to_user_id")
-                        .ok_or_else(|| ParserError::MissingToUserId)?
+                        .ok_or(ParserError::MissingToUserId)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -126,7 +125,7 @@ impl YPBankTxtParser {
                         })?,
                     amount: d
                         .get("amount")
-                        .ok_or_else(|| ParserError::MissingAmount)?
+                        .ok_or(ParserError::MissingAmount)?
                         .parse()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -137,7 +136,7 @@ impl YPBankTxtParser {
                         })?,
                     timestamp: d
                         .get("timestamp")
-                        .ok_or_else(|| ParserError::MissingTimestamp)?
+                        .ok_or(ParserError::MissingTimestamp)?
                         .parse ()
                         .map_err(|e| {
                             ParserError::ParseError(format!(
@@ -148,9 +147,9 @@ impl YPBankTxtParser {
                         })?,
                     status: d
                         .get("status")
-                        .ok_or_else(|| ParserError::MissingStatus)?
+                        .ok_or(ParserError::MissingStatus)?
                         .parse()
-                        .map_err(|e| {
+                        .map_err(|_| {
                             ParserError::WrongStatusType(d.get("status").unwrap ().parse ().unwrap ()) /*(format!(
                                 "Failed to parse status: {} error: {}",
                                 d.get("status").unwrap(),
@@ -159,7 +158,7 @@ impl YPBankTxtParser {
                         })?,
                     description: d
                         .get("description")
-                        .ok_or_else(|| ParserError::MissingDescription)?
+                        .ok_or(ParserError::MissingDescription)?
                         .to_string(),
                 })
             })
@@ -173,17 +172,17 @@ impl YPBankTxtParser {
         records: &[YPBankRecord],
     ) -> Result<(), ParserError> {
         for record in records.iter().enumerate() {
-            writeln!(writer, "# Record {} ({:?})", record.0, record.1.tx_type);
-            writeln!(writer, "tx_id: {}", record.1.tx_id);
-            writeln!(writer, "tx_type: {:?}", record.1.tx_type);
-            writeln!(writer, "from_user_id: {}", record.1.from_user_id);
-            writeln!(writer, "to_user_id: {}", record.1.to_user_id);
-            writeln!(writer, "amount: {}", record.1.amount);
-            writeln!(writer, "timestamp: {}", record.1.timestamp);
-            writeln!(writer, "status: {:?}", record.1.status);
-            writeln!(writer, "description: {}", record.1.description);
+            let _ = writeln!(writer, "# Record {} ({:?})", record.0, record.1.tx_type);
+            let _ = writeln!(writer, "tx_id: {}", record.1.tx_id);
+            let _ = writeln!(writer, "tx_type: {:?}", record.1.tx_type);
+            let _ = writeln!(writer, "from_user_id: {}", record.1.from_user_id);
+            let _ = writeln!(writer, "to_user_id: {}", record.1.to_user_id);
+            let _ = writeln!(writer, "amount: {}", record.1.amount);
+            let _ = writeln!(writer, "timestamp: {}", record.1.timestamp);
+            let _ = writeln!(writer, "status: {:?}", record.1.status);
+            let _ = writeln!(writer, "description: {}", record.1.description);
             if record.0 < records.len() - 1 {
-                writeln!(writer);
+                let _ = writeln!(writer);
             }
         }
         Ok(())

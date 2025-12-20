@@ -1,17 +1,13 @@
 
-use core::hash;
-use std::io;
-use std::io::{Read, BufRead, BufReader, BufWriter, Write};
+use std::io::{BufReader};
 
 use std::collections::HashMap;
 
-use std::fs::{self, File};
+use std::fs::{File};
 
 use std::env;
-
-use yp_bank_parser_lib::parsers::error::ParserError;
 use yp_bank_parser_lib::parsers::parser::Parser;
-use yp_bank_parser_lib::parsers::types::{Status, TransactionType, YPBankRecord};
+use yp_bank_parser_lib::parsers::types::{YPBankRecord};
 use yp_bank_parser_lib::{extract_format, parse_cli_args};
 
 fn usage() {
@@ -38,7 +34,7 @@ fn main() {
         panic!("Both --file1 and --file2 arguments are required.");
     }
 
-    let mut format1 = "csv".to_string();
+    let mut format1 ;
     let file1_path = args_map.get("--file1").expect("Empty --input argument!");
     let fs1 = File::open(file1_path).expect("Failed to open input file1");
     let reader1 = BufReader::new(fs1);
@@ -52,7 +48,7 @@ fn main() {
             .to_string();
     }
 
-    let mut format2 = "csv".to_string();
+    let mut format2;
     let file2_path = args_map.get("--file2").expect("Empty --input argument!");
     let fs2 = File::open(file2_path).expect("Failed to open input file2");
     let reader2 = BufReader::new(fs2);

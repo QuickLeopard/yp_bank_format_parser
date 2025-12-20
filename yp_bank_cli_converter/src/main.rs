@@ -1,16 +1,13 @@
 
 use std::io;
-use std::io::{Read, BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 
-use std::collections::HashMap;
-
-use std::fs::{self, File};
+use std::fs::{File};
 
 use std::env;
 
 use yp_bank_parser_lib::parsers::error::ParserError;
 use yp_bank_parser_lib::parsers::parser::Parser;
-use yp_bank_parser_lib::parsers::types::{Status, TransactionType, YPBankRecord};
 use yp_bank_parser_lib::{extract_format, parse_cli_args};
 
 fn usage() {
@@ -56,7 +53,7 @@ fn main() {
     println!("Input format: {}", input_format);
 
     let mut output_format = "csv".to_string();
-    let mut writer: Box<dyn Write> = if args_map.contains_key("--output") {
+    let writer: Box<dyn Write> = if args_map.contains_key("--output") {
         let file_path = args_map.get("--output").expect("Empty --output argument!");
 
         output_format = extract_format(file_path);

@@ -1,6 +1,6 @@
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use std::io::{self, Read, BufRead, Write, Seek, SeekFrom};
+use byteorder::{BigEndian, WriteBytesExt};
+use std::io::{Read, Write};
 
 use crate::parsers::error::ParserError;
 use crate::parsers::types::{Status, TransactionType, YPBankRecord};
