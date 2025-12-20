@@ -9,14 +9,40 @@ use crate::{HEADER_SIZE, MAGIC, MIN_BODY_SIZE, MAX_RECORD_SIZE};
 
 const MAGIC_HEADER: u32 = 0x5950424E; // 'YPBN' in ASCII
 
+/// Parser for YPBank binary format files.
 pub struct YPBankBinParser;
 
 impl YPBankBinParser {    
 
+    /// Parses YPBank records from a byte slice.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - Byte slice containing binary YPBank data
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing a Vec<YPBankRecord> on success, or ParserError on failure.
     pub fn parse_bytes(data: &[u8]) -> Result<Vec<YPBankRecord>, ParserError> {
         Self::from_read(std::io::Cursor::new(data))
     }
 
+    /// Reads YPBank records from a binary format reader.
+    ///
+    /// Parses the binary format with magic headers and validates record structure.
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A reader implementing the Read trait
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing a Vec<YPBankRecord> on success, or ParserError on failure.
+    ///
+    /// # Errors
+    ///
+    /// Returns various ParserError variants for invalid magic bytes, size validation failures,
+    /// or I/O errors.
     pub fn from_read<R: Read>(mut reader: R) -> Result<Vec<YPBankRecord>, ParserError> {
         let mut records = Vec::new();
         let mut header_buf = [0u8; HEADER_SIZE];
@@ -123,6 +149,22 @@ impl YPBankBinParser {
         })
     }    
 
+    /// Writes YPBank records to a writer in binary format.
+    ///
+    /// Each record is written with a magic header, size field, and binary-encoded data.
+    ///
+    /// # Arguments
+    ///
+    /// * `writer` - A writer implementing the Write trait
+    /// * `records` - Slice of YPBankRecord to write
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result with () on success, or ParserError on failure.
+    ///
+    /// # Errors
+    ///
+    /// Returns ParserError::ParseError if no records are provided, or I/O errors during writing.
     pub fn write_to<W: Write>(mut writer: W, records: &[YPBankRecord]) -> Result<(), ParserError> {
         if records.is_empty() {
             return Err(ParserError::ParseError("No records to write".to_string()));

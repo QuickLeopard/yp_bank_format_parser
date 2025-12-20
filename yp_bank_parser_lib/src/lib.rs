@@ -16,6 +16,15 @@ pub const MAX_RECORD_SIZE: usize = 10 * 1024 * 1024;
 pub mod test_helpers {
     use crate::parsers::types::{YPBankRecord, TransactionType, Status};
 
+/// Creates a test YPBankRecord with deterministic data based on a seed.
+    ///
+    /// # Arguments
+    ///
+    /// * `seed` - A u64 value used to generate deterministic test data
+    ///
+    /// # Returns
+    ///
+    /// Returns a YPBankRecord with fields generated from the seed value.
     pub fn create_test_record(seed: u64) -> YPBankRecord {
         let tx_types = [TransactionType::Deposit, TransactionType::Withdrawal, TransactionType::Transfer];
         let statuses = [Status::Success, Status::Failure, Status::Pending];
@@ -33,11 +42,45 @@ pub mod test_helpers {
         }
     }
 
+    /// Creates a vector of test YPBankRecords.
+    ///
+    /// # Arguments
+    ///
+    /// * `count` - Number of records to create
+    /// * `base_seed` - Base seed value for generating deterministic data
+    ///
+    /// # Returns
+    ///
+    /// Returns a Vec<YPBankRecord> containing the specified number of test records.
     pub fn create_test_records(count: usize, base_seed: u64) -> Vec<YPBankRecord> {
         (0..count).map(|i| create_test_record(base_seed + i as u64)).collect()
     }
 }
 
+/// Extracts the file format from a file path based on its extension.
+///
+/// # Arguments
+///
+/// * `file_path` - A string slice containing the file path
+///
+/// # Returns
+///
+/// Returns a String representing the format:
+/// - "csv" for .csv files
+/// - "txt" for .txt files  
+/// - "bin" for .bin files
+/// - "csv" as default for unknown extensions
+///
+/// # Examples
+///
+/// ```
+/// use yp_bank_parser_lib::extract_format;
+///
+/// assert_eq!(extract_format("data.csv"), "csv");
+/// assert_eq!(extract_format("data.txt"), "txt");
+/// assert_eq!(extract_format("data.bin"), "bin");
+/// assert_eq!(extract_format("data"), "csv"); // default
+/// ```
 pub fn extract_format(file_path: &str) -> String {
     let split_path: Vec<&str> = file_path.split(".").collect();
     if split_path.len() > 1 
@@ -52,6 +95,34 @@ pub fn extract_format(file_path: &str) -> String {
     "csv".to_string()
 }
 
+/// Parses command line arguments into a HashMap.
+///
+/// Takes pairs of arguments and validates them against a list of valid arguments.
+/// Panics if an invalid argument is encountered.
+///
+/// # Arguments
+///
+/// * `args` - Slice of command line arguments as strings
+/// * `valid_args` - Slice of valid argument names for validation
+///
+/// # Returns
+///
+/// Returns a HashMap mapping argument names to their values.
+///
+/// # Panics
+///
+/// Panics if an argument is not in the `valid_args` list.
+///
+/// # Examples
+///
+/// ```
+/// use yp_bank_parser_lib::parse_cli_args;
+///
+/// let args = vec!["--input".to_string(), "file.csv".to_string()];
+/// let valid = &["--input", "--output"];
+/// let result = parse_cli_args(&args, valid);
+/// assert_eq!(result.get("--input"), Some(&"file.csv".to_string()));
+/// ```
 pub fn parse_cli_args(args: &[String], valid_args: &[&str]) -> HashMap<String, String> {
     let mut dict = HashMap::new();
 

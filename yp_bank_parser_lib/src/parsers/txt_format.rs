@@ -5,9 +5,19 @@ use std::io::{Read, Write};
 use crate::parsers::error::ParserError;
 use crate::parsers::types::{YPBankRecord, TransactionType, Status};
 
+/// Parser for YPBank text format files.
 pub struct YPBankTxtParser;
 
 impl YPBankTxtParser {
+    /// Reads sections from a text reader, splitting on lines starting with '#'.
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A reader implementing Read + BufRead traits
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing a Vec of sections (each section is a Vec<String>).
     fn read_sections<R: Read + BufRead>(reader: R) -> Result<Vec<Vec<String>>, ParserError> {
         let mut sections = Vec::new();
         let mut current_section = Vec::new();
@@ -40,6 +50,15 @@ impl YPBankTxtParser {
         Ok(sections)
     }
 
+    /// Parses sections into HashMaps of key-value pairs.
+    ///
+    /// # Arguments
+    ///
+    /// * `sections` - Vector of sections, each containing lines of text
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing a Vec of HashMaps with parsed key-value pairs.
     fn parse_sections(
         sections: Vec<Vec<String>>,
     ) -> Result<Vec<HashMap<String, String>>, ParserError> {
@@ -66,6 +85,21 @@ impl YPBankTxtParser {
             .collect()
     }
 
+    /// Reads YPBank records from a text format reader.
+    ///
+    /// Parses text format with key-value pairs separated by colons.
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A reader implementing Read + BufRead traits
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing a Vec<YPBankRecord> on success, or ParserError on failure.
+    ///
+    /// # Errors
+    ///
+    /// Returns ParserError variants for parsing failures or missing required fields.
     pub fn from_read<R: Read + BufRead>(reader: R) -> Result<Vec<YPBankRecord>, ParserError> {
         let sections = Self::read_sections(reader)?;
 
@@ -113,6 +147,18 @@ impl YPBankTxtParser {
         Ok(records)
     }
 
+    /// Writes YPBank records to a writer in text format.
+    ///
+    /// Each record is written with key-value pairs and separated by comment headers.
+    ///
+    /// # Arguments
+    ///
+    /// * `writer` - A writer implementing the Write trait
+    /// * `records` - Slice of YPBankRecord to write
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result with () on success, or ParserError on failure.
     pub fn write_to<W: Write>(mut writer: W, records: &[YPBankRecord]) -> Result<(), ParserError> {
         for record in records.iter().enumerate() {
             writeln!(writer, "# Record {} ({:?})", record.0, record.1.tx_type)?;

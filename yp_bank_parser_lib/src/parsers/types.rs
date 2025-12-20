@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
 
+/// Represents a YPBank transaction record.
 #[derive(Debug, Clone, PartialEq)]
 pub struct YPBankRecord {
     pub tx_id: u64,
@@ -14,6 +15,7 @@ pub struct YPBankRecord {
     pub description: String,
 }
 
+/// Transaction type enumeration.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TransactionType {
     Deposit = 0,
@@ -52,6 +54,14 @@ impl TryFrom<u8> for TransactionType {
 
 impl TransactionType {
     /// Parse a transaction type from a byte value.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - Byte value to parse (0=Deposit, 1=Transfer, 2=Withdrawal)
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing the TransactionType on success, or ParserError on failure.
     pub fn from_byte(value: u8) -> Result<Self, ParserError> {
         match value {
             0 => Ok(TransactionType::Deposit),
@@ -62,11 +72,16 @@ impl TransactionType {
     }
 
     /// Convert to byte representation.
+    ///
+    /// # Returns
+    ///
+    /// Returns the byte value representing this transaction type.
     pub fn to_byte(self) -> u8 {
         self as u8
     }
 }
 
+/// Transaction status enumeration.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Status {
     Success = 0,
@@ -102,6 +117,14 @@ impl TryFrom<u8> for Status {
 
 impl Status {
     /// Parse a status from a byte value.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - Byte value to parse (0=Success, 1=Failure, 2=Pending)
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing the Status on success, or ParserError on failure.
     pub fn from_byte(value: u8) -> Result<Self, ParserError> {
         match value {
             0 => Ok(Status::Success),
@@ -112,6 +135,10 @@ impl Status {
     }
 
     /// Convert to byte representation.
+    ///
+    /// # Returns
+    ///
+    /// Returns the byte value representing this status.
     pub fn to_byte(self) -> u8 {
         self as u8
     }
