@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 byteorder = "1.4"
 thiserror = "1.0"
+strum = { version = "0.26", features = ["derive"] }

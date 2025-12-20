@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use strum::{EnumString, Display};
 
 use crate::parsers::error::ParserError;
 
@@ -16,25 +16,15 @@ pub struct YPBankRecord {
 }
 
 /// Transaction type enumeration.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString, Display)]
+#[strum(serialize_all = "UPPERCASE", ascii_case_insensitive)]
 pub enum TransactionType {
     Deposit = 0,
     Transfer = 1,
     Withdrawal = 2,
 }
 
-impl FromStr for TransactionType {
-    type Err = String;
 
-    fn from_str(input: &str) -> Result<TransactionType, Self::Err> {
-        match input.to_uppercase().as_str() {
-            "DEPOSIT" => Ok(TransactionType::Deposit),
-            "WITHDRAWAL" => Ok(TransactionType::Withdrawal),
-            "TRANSFER" => Ok(TransactionType::Transfer),
-            _ => Err("Wrong transaction type".to_string()),
-        }
-    }
-}
 
 impl TryFrom<u8> for TransactionType {
     type Error = ParserError;
@@ -82,25 +72,15 @@ impl TransactionType {
 }
 
 /// Transaction status enumeration.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString, Display)]
+#[strum(serialize_all = "UPPERCASE", ascii_case_insensitive)]
 pub enum Status {
     Success = 0,
     Failure = 1,
     Pending = 2,
 }
 
-impl FromStr for Status {
-    type Err = String;
 
-    fn from_str(input: &str) -> Result<Status, Self::Err> {
-        match input.to_uppercase().as_str() {
-            "PENDING" => Ok(Status::Pending),
-            "SUCCESS" => Ok(Status::Success),
-            "FAILURE" => Ok(Status::Failure),
-            _ => Err("Wrong status".to_string()),
-        }
-    }
-}
 
 impl TryFrom<u8> for Status {
     type Error = ParserError;

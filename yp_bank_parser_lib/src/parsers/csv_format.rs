@@ -1,5 +1,4 @@
 use std::io::{BufRead, Read, Write};
-//use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
 use crate::parsers::types::YPBankRecord;
@@ -151,9 +150,8 @@ impl YPBankRecord {
         let mut parts = Vec::new();
         let mut current_field = String::new();
         let mut in_quotes = false;
-        let mut chars = s.chars().peekable();
         
-        while let Some(ch) = chars.next() {
+        for ch in s.chars() {
             match ch {
                 '"' => {
                     in_quotes = !in_quotes;
@@ -261,7 +259,6 @@ impl YPBankRecord {
 mod tests {
     use super::*;
     use crate::parsers::types::{TransactionType, Status};
-    use std::io::Cursor;
 
     #[test]
     fn test_csv_parse_description_with_comma() {
