@@ -79,14 +79,13 @@ fn main() {
     let records = match Parser::from_read(reader, &input_format) {
         Ok(records) => records,
         Err(err) => {
-            eprintln!("Error parsing input: {:?}", err);
-            return;
+            panic!("Error parsing input: {:?}", err);
         }
     };
 
     let write_result = Parser::write_to(writer, &records, &output_format);
     if let Err(ParserError::ParseError(e)) = write_result {
-        eprintln!("Write to outpu error: {}", e);
+        panic!("Write to output error: {}", e);
     }
 }
 
