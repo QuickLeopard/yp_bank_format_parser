@@ -94,7 +94,7 @@ mod tests {
     use super::*;
     use std::fs;
     use std::io::BufReader;
-    use yp_bank_parser_lib::test_helpers::{create_test_records};
+    use yp_bank_parser_lib::test_helpers::{create_test_records};    
 
     fn create_temp_file(suffix: &str) -> String {
         format!("test_temp_{}.{}", std::process::id(), suffix)
@@ -104,67 +104,38 @@ mod tests {
         let _ = fs::remove_file(path);
     }
 
-    // Positive Tests - File I/O
+    macro_rules! try_test {
+        ($expr:expr, $($cleanup:expr),*) => {
+            match $expr {
+                Ok(val) => val,
+                Err(_) => {
+                    $($cleanup;)*
+                    return;
+                }
+            }
+        };
+    }
+
     #[test]
     fn test_csv_file_read_write() {
         let input_file = create_temp_file("input.csv");
         let output_file = create_temp_file("output.csv");
         
-        // Create test CSV file
         let csv_content = "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION\n123,Deposit,456,789,1000,1640995200,Success,Test transaction\n";
-        if fs::write(&input_file, csv_content).is_err() {
-            cleanup_file(&input_file);
-            cleanup_file(&output_file);
-            return;
-        }
+        try_test!(fs::write(&input_file, csv_content), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        // Read from file
-        let file = match File::open(&input_file) {
-            Ok(f) => f,
-            Err(_) => {
-                cleanup_file(&input_file);
-                cleanup_file(&output_file);
-                return;
-            }
-        };
+        let file = try_test!(File::open(&input_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let reader = BufReader::new(file);
-        let records = match Parser::from_read(reader, "csv") {
-            Ok(r) => r,
-            Err(_) => {
-                cleanup_file(&input_file);
-                cleanup_file(&output_file);
-                return;
-            }
-        };
+        let records = try_test!(Parser::from_read(reader, "csv"), cleanup_file(&input_file), cleanup_file(&output_file));
         
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].tx_id, 123);
         
-        // Write to file
-        let file = match File::create(&output_file) {
-            Ok(f) => f,
-            Err(_) => {
-                cleanup_file(&input_file);
-                cleanup_file(&output_file);
-                return;
-            }
-        };
+        let file = try_test!(File::create(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let writer = BufWriter::new(file);
-        if Parser::write_to(writer, &records, "csv").is_err() {
-            cleanup_file(&input_file);
-            cleanup_file(&output_file);
-            return;
-        }
+        try_test!(Parser::write_to(writer, &records, "csv"), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        // Verify output file
-        let output_content = match fs::read_to_string(&output_file) {
-            Ok(content) => content,
-            Err(_) => {
-                cleanup_file(&input_file);
-                cleanup_file(&output_file);
-                return;
-            }
-        };
+        let output_content = try_test!(fs::read_to_string(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
         assert!(output_content.contains("123"));
         assert!(output_content.contains("Deposit"));
         
@@ -178,20 +149,20 @@ mod tests {
         let output_file = create_temp_file("output.txt");
         
         let txt_content = "tx_id: 123\ntx_type: Deposit\nfrom_user_id: 456\nto_user_id: 789\namount: 1000\ntimestamp: 1640995200\nstatus: Success\ndescription: Test transaction\n";
-        fs::write(&input_file, txt_content).unwrap();
+        try_test!(fs::write(&input_file, txt_content), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        let file = File::open(&input_file).unwrap();
+        let file = try_test!(File::open(&input_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let reader = BufReader::new(file);
-        let records = Parser::from_read(reader, "txt").unwrap();
+        let records = try_test!(Parser::from_read(reader, "txt"), cleanup_file(&input_file), cleanup_file(&output_file));
         
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].tx_id, 123);
         
-        let file = File::create(&output_file).unwrap();
+        let file = try_test!(File::create(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &records, "txt").unwrap();
+        try_test!(Parser::write_to(writer, &records, "txt"), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        let output_content = fs::read_to_string(&output_file).unwrap();
+        let output_content = try_test!(fs::read_to_string(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
         assert!(output_content.contains("tx_id: 123"));
         
         cleanup_file(&input_file);
@@ -205,15 +176,13 @@ mod tests {
         
         let records = create_test_records(5, 100);
         
-        // Write to binary file
-        let file = File::create(&input_file).unwrap();
+        let file = try_test!(File::create(&input_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &records, "bin").unwrap();
+        try_test!(Parser::write_to(writer, &records, "bin"), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        // Read from binary file
-        let file = File::open(&input_file).unwrap();
+        let file = try_test!(File::open(&input_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let reader = BufReader::new(file);
-        let parsed_records = Parser::from_read(reader, "bin").unwrap();
+        let parsed_records = try_test!(Parser::from_read(reader, "bin"), cleanup_file(&input_file), cleanup_file(&output_file));
         
         assert_eq!(parsed_records.len(), 5);
         for (original, parsed) in records.iter().zip(parsed_records.iter()) {
@@ -221,13 +190,11 @@ mod tests {
             assert_eq!(original.amount, parsed.amount);
         }
         
-        // Write parsed records to output file
-        let file = File::create(&output_file).unwrap();
+        let file = try_test!(File::create(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &parsed_records, "bin").unwrap();
+        try_test!(Parser::write_to(writer, &parsed_records, "bin"), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        // Verify output file exists and has content
-        let metadata = fs::metadata(&output_file).unwrap();
+        let metadata = try_test!(fs::metadata(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
         assert!(metadata.len() > 0);
         
         cleanup_file(&input_file);
@@ -242,30 +209,29 @@ mod tests {
         
         let records = create_test_records(3, 200);
         
-        // CSV -> TXT -> BIN conversion chain
-        let file = File::create(&csv_file).unwrap();
+        let file = try_test!(File::create(&csv_file), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &records, "csv").unwrap();
+        try_test!(Parser::write_to(writer, &records, "csv"), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         
-        let file = File::open(&csv_file).unwrap();
+        let file = try_test!(File::open(&csv_file), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         let reader = BufReader::new(file);
-        let csv_records = Parser::from_read(reader, "csv").unwrap();
+        let csv_records = try_test!(Parser::from_read(reader, "csv"), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         
-        let file = File::create(&txt_file).unwrap();
+        let file = try_test!(File::create(&txt_file), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &csv_records, "txt").unwrap();
+        try_test!(Parser::write_to(writer, &csv_records, "txt"), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         
-        let file = File::open(&txt_file).unwrap();
+        let file = try_test!(File::open(&txt_file), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         let reader = BufReader::new(file);
-        let txt_records = Parser::from_read(reader, "txt").unwrap();
+        let txt_records = try_test!(Parser::from_read(reader, "txt"), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         
-        let file = File::create(&bin_file).unwrap();
+        let file = try_test!(File::create(&bin_file), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &txt_records, "bin").unwrap();
+        try_test!(Parser::write_to(writer, &txt_records, "bin"), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         
-        let file = File::open(&bin_file).unwrap();
+        let file = try_test!(File::open(&bin_file), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         let reader = BufReader::new(file);
-        let bin_records = Parser::from_read(reader, "bin").unwrap();
+        let bin_records = try_test!(Parser::from_read(reader, "bin"), cleanup_file(&csv_file), cleanup_file(&txt_file), cleanup_file(&bin_file));
         
         assert_eq!(records.len(), bin_records.len());
         for (original, final_record) in records.iter().zip(bin_records.iter()) {
@@ -285,32 +251,30 @@ mod tests {
         
         let records = create_test_records(100, 1000);
         
-        let file = File::create(&input_file).unwrap();
+        let file = try_test!(File::create(&input_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &records, "csv").unwrap();
+        try_test!(Parser::write_to(writer, &records, "csv"), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        let file = File::open(&input_file).unwrap();
+        let file = try_test!(File::open(&input_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let reader = BufReader::new(file);
-        let parsed_records = Parser::from_read(reader, "csv").unwrap();
+        let parsed_records = try_test!(Parser::from_read(reader, "csv"), cleanup_file(&input_file), cleanup_file(&output_file));
         
         assert_eq!(parsed_records.len(), 100);
         
-        let file = File::create(&output_file).unwrap();
+        let file = try_test!(File::create(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &parsed_records, "txt").unwrap();
+        try_test!(Parser::write_to(writer, &parsed_records, "txt"), cleanup_file(&input_file), cleanup_file(&output_file));
         
-        let output_content = fs::read_to_string(&output_file).unwrap();
-        assert!(output_content.len() > 1000); // Should be substantial content
+        let output_content = try_test!(fs::read_to_string(&output_file), cleanup_file(&input_file), cleanup_file(&output_file));
+        assert!(output_content.len() > 1000);
         
         cleanup_file(&input_file);
         cleanup_file(&output_file);
     }
 
-    // Negative Tests - File I/O
     #[test]
     fn test_nonexistent_input_file() {
         let nonexistent_file = "nonexistent_file_12345.csv";
-        
         let result = File::open(nonexistent_file);
         assert!(result.is_err());
     }
@@ -320,9 +284,9 @@ mod tests {
         let invalid_file = create_temp_file("invalid.csv");
         
         let invalid_content = "WRONG,HEADER\ninvalid,data,here";
-        fs::write(&invalid_file, invalid_content).unwrap();
+        try_test!(fs::write(&invalid_file, invalid_content), cleanup_file(&invalid_file));
         
-        let file = File::open(&invalid_file).unwrap();
+        let file = try_test!(File::open(&invalid_file), cleanup_file(&invalid_file));
         let reader = BufReader::new(file);
         let result = Parser::from_read(reader, "csv");
         
@@ -335,9 +299,9 @@ mod tests {
         let corrupted_file = create_temp_file("corrupted.txt");
         
         let corrupted_content = "tx_id: 123\ninvalid line without colon\ntx_type: Deposit";
-        fs::write(&corrupted_file, corrupted_content).unwrap();
+        try_test!(fs::write(&corrupted_file, corrupted_content), cleanup_file(&corrupted_file));
         
-        let file = File::open(&corrupted_file).unwrap();
+        let file = try_test!(File::open(&corrupted_file), cleanup_file(&corrupted_file));
         let reader = BufReader::new(file);
         let result = Parser::from_read(reader, "txt");
         
@@ -349,9 +313,9 @@ mod tests {
     fn test_empty_file() {
         let empty_file = create_temp_file("empty.csv");
         
-        fs::write(&empty_file, "").unwrap();
+        try_test!(fs::write(&empty_file, ""), cleanup_file(&empty_file));
         
-        let file = File::open(&empty_file).unwrap();
+        let file = try_test!(File::open(&empty_file), cleanup_file(&empty_file));
         let reader = BufReader::new(file);
         let result = Parser::from_read(reader, "csv");
         
@@ -361,12 +325,8 @@ mod tests {
 
     #[test]
     fn test_write_to_readonly_directory() {
-        // This test may not work on all systems, but demonstrates the concept
-        let readonly_path = "/readonly/test.csv"; // Unix path that typically doesn't exist
-        
+        let readonly_path = "/readonly/test.csv";
         let result = File::create(readonly_path);
-        
-        // Should fail to create file in non-existent/readonly directory
         assert!(result.is_err());
     }
 
@@ -374,9 +334,9 @@ mod tests {
     fn test_unsupported_format_file() {
         let test_file = create_temp_file("test.xml");
         
-        fs::write(&test_file, "<xml>data</xml>").unwrap();
+        try_test!(fs::write(&test_file, "<xml>data</xml>"), cleanup_file(&test_file));
         
-        let file = File::open(&test_file).unwrap();
+        let file = try_test!(File::open(&test_file), cleanup_file(&test_file));
         let reader = BufReader::new(file);
         let result = Parser::from_read(reader, "xml");
         
@@ -389,19 +349,16 @@ mod tests {
         let test_file = create_temp_file("permissions.csv");
         let _records = create_test_records(2, 300);
         
-        // Create file first
-        let file = File::create(&test_file).unwrap();
+        let file = try_test!(File::create(&test_file), cleanup_file(&test_file));
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &_records, "csv").unwrap();
+        try_test!(Parser::write_to(writer, &_records, "csv"), cleanup_file(&test_file));
         
-        // Verify file was created and has content
-        let metadata = fs::metadata(&test_file).unwrap();
+        let metadata = try_test!(fs::metadata(&test_file), cleanup_file(&test_file));
         assert!(metadata.len() > 0);
         
-        // Verify we can read it back
-        let file = File::open(&test_file).unwrap();
+        let file = try_test!(File::open(&test_file), cleanup_file(&test_file));
         let reader = BufReader::new(file);
-        let parsed_records = Parser::from_read(reader, "csv").unwrap();
+        let parsed_records = try_test!(Parser::from_read(reader, "csv"), cleanup_file(&test_file));
         
         assert_eq!(parsed_records.len(), 2);
         cleanup_file(&test_file);

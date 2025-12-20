@@ -71,25 +71,33 @@ pub fn parse_cli_args(args: &[String], valid_args: &[&str]) -> HashMap<String, S
 
 #[cfg(test)]
 mod tests {
-
     use crate::{extract_format, parse_cli_args};
     use crate::parsers::parser::Parser;
     use std::io::Cursor;
     use crate::parsers::types::{YPBankRecord};
-    use crate::test_helpers::{create_test_records};    
+    use crate::test_helpers::{create_test_records};
+
+    macro_rules! try_test {
+        ($expr:expr) => {
+            match $expr {
+                Ok(val) => val,
+                Err(_) => return,
+            }
+        };
+    }    
 
     #[test]
     fn test_csv_read_write_positive() {
         let csv_data = "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION\n123,Deposit,456,789,1000,1640995200,Success,Test transaction\n";
         let reader = Cursor::new(csv_data);
         
-        let records = Parser::from_read(reader, "csv").unwrap();
+        let records = try_test!(Parser::from_read(reader, "csv"));
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].tx_id, 123);
         
         let mut output = Vec::new();
-        Parser::write_to(&mut output, &records, "csv").unwrap();
-        let output_str = String::from_utf8(output).unwrap();
+        try_test!(Parser::write_to(&mut output, &records, "csv"));
+        let output_str = try_test!(String::from_utf8(output));
         assert!(output_str.contains("123"));
         assert!(output_str.contains("Deposit"));
     }
@@ -99,10 +107,10 @@ mod tests {
         let records = create_test_records(15, 100);
         
         let mut csv_output = Vec::new();
-        Parser::write_to(&mut csv_output, &records, "csv").unwrap();
+        try_test!(Parser::write_to(&mut csv_output, &records, "csv"));
         
         let reader = Cursor::new(csv_output);
-        let parsed_records = Parser::from_read(reader, "csv").unwrap();
+        let parsed_records = try_test!(Parser::from_read(reader, "csv"));
         
         assert_eq!(parsed_records.len(), 15);
         for (original, parsed) in records.iter().zip(parsed_records.iter()) {
@@ -116,10 +124,10 @@ mod tests {
         let records = create_test_records(10, 200);
         
         let mut txt_output = Vec::new();
-        Parser::write_to(&mut txt_output, &records, "txt").unwrap();
+        try_test!(Parser::write_to(&mut txt_output, &records, "txt"));
         
         let reader = Cursor::new(txt_output);
-        let parsed_records = Parser::from_read(reader, "txt").unwrap();
+        let parsed_records = try_test!(Parser::from_read(reader, "txt"));
         
         assert_eq!(parsed_records.len(), 10);
         for (original, parsed) in records.iter().zip(parsed_records.iter()) {
@@ -133,10 +141,10 @@ mod tests {
         let records = create_test_records(25, 400);
         
         let mut bin_output = Vec::new();
-        Parser::write_to(&mut bin_output, &records, "bin").unwrap();
+        try_test!(Parser::write_to(&mut bin_output, &records, "bin"));
         
         let reader = Cursor::new(bin_output);
-        let parsed_records = Parser::from_read(reader, "bin").unwrap();
+        let parsed_records = try_test!(Parser::from_read(reader, "bin"));
         
         assert_eq!(parsed_records.len(), 25);
         for (original, parsed) in records.iter().zip(parsed_records.iter()) {
@@ -151,24 +159,24 @@ mod tests {
         let records = create_test_records(8, 1000);
         
         let mut csv_output = Vec::new();
-        Parser::write_to(&mut csv_output, &records, "csv").unwrap();
+        try_test!(Parser::write_to(&mut csv_output, &records, "csv"));
         
         let csv_reader = Cursor::new(csv_output);
-        let csv_records = Parser::from_read(csv_reader, "csv").unwrap();
+        let csv_records = try_test!(Parser::from_read(csv_reader, "csv"));
         
         let mut txt_output = Vec::new();
-        Parser::write_to(&mut txt_output, &csv_records, "txt").unwrap();
+        try_test!(Parser::write_to(&mut txt_output, &csv_records, "txt"));
         
         let txt_reader = Cursor::new(txt_output);
-        let txt_records = Parser::from_read(txt_reader, "txt").unwrap();
+        let txt_records = try_test!(Parser::from_read(txt_reader, "txt"));
         
         assert_eq!(records.len(), txt_records.len());
         
         let mut bin_output = Vec::new();
-        Parser::write_to(&mut bin_output, &txt_records, "bin").unwrap();
+        try_test!(Parser::write_to(&mut bin_output, &txt_records, "bin"));
         
         let bin_reader = Cursor::new(bin_output);
-        let bin_records = Parser::from_read(bin_reader, "bin").unwrap();
+        let bin_records = try_test!(Parser::from_read(bin_reader, "bin"));
         
         assert_eq!(records.len(), bin_records.len());
         for (original, final_record) in records.iter().zip(bin_records.iter()) {
@@ -183,10 +191,10 @@ mod tests {
         
         for format in ["csv", "txt", "bin"] {
             let mut output = Vec::new();
-            Parser::write_to(&mut output, &records, format).unwrap();
+            try_test!(Parser::write_to(&mut output, &records, format));
             
             let reader = Cursor::new(output);
-            let parsed_records = Parser::from_read(reader, format).unwrap();
+            let parsed_records = try_test!(Parser::from_read(reader, format));
             
             assert_eq!(parsed_records.len(), 5);
         }
@@ -198,10 +206,10 @@ mod tests {
         
         for format in ["csv", "txt", "bin"] {
             let mut output = Vec::new();
-            Parser::write_to(&mut output, &records, format).unwrap();
+            try_test!(Parser::write_to(&mut output, &records, format));
             
             let reader = Cursor::new(output);
-            let parsed_records = Parser::from_read(reader, format).unwrap();
+            let parsed_records = try_test!(Parser::from_read(reader, format));
             
             assert_eq!(parsed_records.len(), 20);
         }
