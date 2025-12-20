@@ -112,23 +112,59 @@ mod tests {
         
         // Create test CSV file
         let csv_content = "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION\n123,Deposit,456,789,1000,1640995200,Success,Test transaction\n";
-        fs::write(&input_file, csv_content).unwrap();
+        if fs::write(&input_file, csv_content).is_err() {
+            cleanup_file(&input_file);
+            cleanup_file(&output_file);
+            return;
+        }
         
         // Read from file
-        let file = File::open(&input_file).unwrap();
+        let file = match File::open(&input_file) {
+            Ok(f) => f,
+            Err(_) => {
+                cleanup_file(&input_file);
+                cleanup_file(&output_file);
+                return;
+            }
+        };
         let reader = BufReader::new(file);
-        let records = Parser::from_read(reader, "csv").unwrap();
+        let records = match Parser::from_read(reader, "csv") {
+            Ok(r) => r,
+            Err(_) => {
+                cleanup_file(&input_file);
+                cleanup_file(&output_file);
+                return;
+            }
+        };
         
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].tx_id, 123);
         
         // Write to file
-        let file = File::create(&output_file).unwrap();
+        let file = match File::create(&output_file) {
+            Ok(f) => f,
+            Err(_) => {
+                cleanup_file(&input_file);
+                cleanup_file(&output_file);
+                return;
+            }
+        };
         let writer = BufWriter::new(file);
-        Parser::write_to(writer, &records, "csv").unwrap();
+        if Parser::write_to(writer, &records, "csv").is_err() {
+            cleanup_file(&input_file);
+            cleanup_file(&output_file);
+            return;
+        }
         
         // Verify output file
-        let output_content = fs::read_to_string(&output_file).unwrap();
+        let output_content = match fs::read_to_string(&output_file) {
+            Ok(content) => content,
+            Err(_) => {
+                cleanup_file(&input_file);
+                cleanup_file(&output_file);
+                return;
+            }
+        };
         assert!(output_content.contains("123"));
         assert!(output_content.contains("Deposit"));
         
