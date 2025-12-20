@@ -1,5 +1,6 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
+use std::array::TryFromSliceError;
 use std::io::{Read, Write};
 
 use crate::parsers::error::ParserError;
