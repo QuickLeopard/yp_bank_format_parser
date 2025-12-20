@@ -3,7 +3,8 @@ use std::io::BufRead;
 use std::io::{Read, Write};
 
 use crate::parsers::error::ParserError;
-use crate::parsers::types::YPBankRecord;
+use crate::parsers::parser;
+use crate::parsers::types::{YPBankRecord, TransactionType, Status};
 
 pub struct YPBankTxtParser;
 
@@ -71,95 +72,41 @@ impl YPBankTxtParser {
 
         let dict = Self::parse_sections(sections)?;
 
-        //let mut lines = reader.lines();
-
-        //let splitted = lines.sp
+        fn parse_helper<T>(d: &HashMap<String, String>, key: &str, error: ParserError) -> Result<T, ParserError>
+        where
+            T: std::str::FromStr,
+            T::Err: std::fmt::Display,
+        {
+            let tx_str = d.get(key).ok_or(error)?;
+            tx_str.parse::<T>().map_err(|e| {
+                ParserError::ParseError(format!(
+                    "Failed to parse {}: {} error: {}",
+                    key,
+                    tx_str,
+                    e
+                ))
+            })
+        }
 
         let records = dict
             .into_iter()
             .map(|d| {
                 Ok(YPBankRecord {
-                    tx_id: d
-                        .get("tx_id")
-                        .ok_or(ParserError::MissingTxId)?
-                        .parse()
-                        .map_err(|e| {
-                            ParserError::ParseError(format!(
-                                "Failed to parse tx_id: {} error: {}",
-                                d.get("tx_id").unwrap(),
-                                e
-                            ))
-                        })?,
-                    tx_type: d
-                        .get("tx_type")
-                        .ok_or(ParserError::MissingTransactionType)?
-                        .parse()
-                        .map_err(|e| {
-                            ParserError::ParseError(format!(
-                                "Failed to parse tx_type: {} error: {}",
-                                d.get("tx_type").unwrap(),
-                                e
-                            ))
-                        })?,
-                    from_user_id: d
-                        .get("from_user_id")
-                        .ok_or(ParserError::MissingFromUserId)?
-                        .parse()
-                        .map_err(|e| {
-                            ParserError::ParseError(format!(
-                                "Failed to parse from_user_id: {} error: {}",
-                                d.get("from_user_id").unwrap(),
-                                e
-                            ))
-                        })?,
-                    to_user_id: d
-                        .get("to_user_id")
-                        .ok_or(ParserError::MissingToUserId)?
-                        .parse()
-                        .map_err(|e| {
-                            ParserError::ParseError(format!(
-                                "Failed to parse to_user_id: {} error: {}",
-                                d.get("to_user_id").unwrap(),
-                                e
-                            ))
-                        })?,
-                    amount: d
-                        .get("amount")
-                        .ok_or(ParserError::MissingAmount)?
-                        .parse()
-                        .map_err(|e| {
-                            ParserError::ParseError(format!(
-                                "Failed to parse amount: {} error: {}",
-                                d.get("amount").unwrap(),
-                                e
-                            ))
-                        })?,
-                    timestamp: d
-                        .get("timestamp")
-                        .ok_or(ParserError::MissingTimestamp)?
-                        .parse()
-                        .map_err(|e| {
-                            ParserError::ParseError(format!(
-                                "Failed to parse timestamp: {} error: {}",
-                                d.get("timestamp").unwrap(),
-                                e
-                            ))
-                        })?,
-                    status: d
-                        .get("status")
-                        .ok_or(ParserError::MissingStatus)?
-                        .parse()
-                        .map_err(|_| {
-                            ParserError::WrongStatusType(d.get("status").unwrap().parse().unwrap()) /*(format!(
-                            "Failed to parse status: {} error: {}",
-                            d.get("status").unwrap(),
-                            e
-                            ))*/
-                        })?,
-                    description: d
-                        .get("description")
-                        .ok_or(ParserError::MissingDescription)?
-                        .to_string(),
+                    tx_id: parse_helper::<u64>(&d, "tx_id", ParserError::MissingTxId)?,                     
+                                           
+                    tx_type: parse_helper::<TransactionType>(&d, "tx_type", ParserError::MissingTransactionType)?,                         
+                                           
+                    from_user_id: parse_helper::<u64>(&d, "from_user_id", ParserError::MissingFromUserId)?,
+                        
+                    to_user_id: parse_helper::<u64>(&d, "to_user_id", ParserError::MissingToUserId)?,
+                       
+                    amount: parse_helper::<i64>(&d, "amount", ParserError::MissingAmount)?,
+                                                              
+                    timestamp: parse_helper::<u64>(&d, "timestamp", ParserError::MissingTimestamp)?,
+                                            
+                    status: parse_helper::<Status>(&d, "status", ParserError::MissingStatus)?,
+                                            
+                    description: parse_helper::<String>(&d, "description", ParserError::MissingDescription)?,                        
                 })
             })
             .collect::<Result<Vec<_>, ParserError>>()?;
