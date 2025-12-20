@@ -36,13 +36,16 @@ impl FromStr for TransactionType {
 
 impl TryFrom<u8> for TransactionType {
     type Error = ParserError;
-    
+
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(TransactionType::Deposit),
             1 => Ok(TransactionType::Transfer),
             2 => Ok(TransactionType::Withdrawal),
-            _ => Err(ParserError::ParseError(format! ("Wrong Transaction Type: {}", value))),
+            _ => Err(ParserError::ParseError(format!(
+                "Wrong Transaction Type: {}",
+                value
+            ))),
         }
     }
 }
@@ -86,13 +89,13 @@ impl FromStr for Status {
 
 impl TryFrom<u8> for Status {
     type Error = ParserError;
-    
+
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Status::Success),
             1 => Ok(Status::Failure),
             2 => Ok(Status::Pending),
-            _ => Err(ParserError::ParseError(format! ("Wrong Status: {}", value))),
+            _ => Err(ParserError::ParseError(format!("Wrong Status: {}", value))),
         }
     }
 }

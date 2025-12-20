@@ -1,9 +1,8 @@
-
-use std::io::{Read, BufRead, Write};
+use std::io::{BufRead, Read, Write};
 //use std::str::FromStr;
 
 use crate::parsers::error::ParserError;
-use crate::parsers::types::{YPBankRecord};
+use crate::parsers::types::YPBankRecord;
 
 const PROPER_HEADER: &str =
     "TX_ID,TX_TYPE,FROM_USER_ID,TO_USER_ID,AMOUNT,TIMESTAMP,STATUS,DESCRIPTION";
@@ -26,7 +25,7 @@ impl YPBankCsvParser {
         };
 
         if !Self::check_header(&header) {
-            return Err(ParserError::WrongCsvHeader(header.to_string ()));
+            return Err(ParserError::WrongCsvHeader(header.to_string()));
         }
 
         let mut records = Vec::new();
@@ -44,10 +43,7 @@ impl YPBankCsvParser {
         Ok(records)
     }
 
-    pub fn write_to<W: Write>(
-        mut writer: W,
-        records: &[YPBankRecord],
-    ) -> Result<(), ParserError> {
+    pub fn write_to<W: Write>(mut writer: W, records: &[YPBankRecord]) -> Result<(), ParserError> {
         if records.is_empty() {
             return Err(ParserError::ParseError("No records to write".to_string()));
         }
@@ -85,7 +81,7 @@ impl YPBankRecord {
         }
 
         Ok(records)
-    }    
+    }
 
     pub fn from_string(s: &str) -> Result<Self, ParserError> {
         let parts: Vec<&str> = s.split(',').collect();
@@ -121,7 +117,7 @@ impl YPBankRecord {
                         parts[4], e
                     ))
                 })?,
-                timestamp: parts[5].parse ().map_err(|e| {
+                timestamp: parts[5].parse().map_err(|e| {
                     ParserError::ParseError(format!(
                         "Failed to parse timestamp: {} error: {}",
                         parts[5], e
