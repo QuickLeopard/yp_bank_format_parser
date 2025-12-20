@@ -169,17 +169,17 @@ impl YPBankTxtParser {
 
     pub fn write_to<W: Write>(mut writer: W, records: &[YPBankRecord]) -> Result<(), ParserError> {
         for record in records.iter().enumerate() {
-            let _ = writeln!(writer, "# Record {} ({:?})", record.0, record.1.tx_type);
-            let _ = writeln!(writer, "tx_id: {}", record.1.tx_id);
-            let _ = writeln!(writer, "tx_type: {:?}", record.1.tx_type);
-            let _ = writeln!(writer, "from_user_id: {}", record.1.from_user_id);
-            let _ = writeln!(writer, "to_user_id: {}", record.1.to_user_id);
-            let _ = writeln!(writer, "amount: {}", record.1.amount);
-            let _ = writeln!(writer, "timestamp: {}", record.1.timestamp);
-            let _ = writeln!(writer, "status: {:?}", record.1.status);
-            let _ = writeln!(writer, "description: {}", record.1.description);
+            writeln!(writer, "# Record {} ({:?})", record.0, record.1.tx_type)?;
+            writeln!(writer, "tx_id: {}", record.1.tx_id)?;
+            writeln!(writer, "tx_type: {:?}", record.1.tx_type)?;
+            writeln!(writer, "from_user_id: {}", record.1.from_user_id)?;
+            writeln!(writer, "to_user_id: {}", record.1.to_user_id)?;
+            writeln!(writer, "amount: {}", record.1.amount)?;
+            writeln!(writer, "timestamp: {}", record.1.timestamp)?;
+            writeln!(writer, "status: {:?}", record.1.status)?;
+            writeln!(writer, "description: {}", record.1.description)?;
             if record.0 < records.len() - 1 {
-                let _ = writeln!(writer);
+                writeln!(writer)?;
             }
         }
         Ok(())
